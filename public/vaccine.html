@@ -1847,8 +1847,6 @@ async function openModal(entityKey, existing = null) {
   const fieldsHtml = cfg.fields.map(f => {
     const val = existing ? (existing[f.name] ?? '') : '';
     const disabled = (existing && f.lockOnEdit) ? 'disabled' : '';
-    const req = f.required ? 'required' : '';
-    const reqStar = f.required ? '<span class="req">*</span>' : '';
     
     // Hide primary ID on create (auto-generates), don't require it
     const isHidden = !existing && f.name === cfg.idField;
