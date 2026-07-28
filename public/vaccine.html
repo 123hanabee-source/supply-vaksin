@@ -1,0 +1,2005 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VaxTrack — Vaccine Distribution Management</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+  :root {
+    --navy:      #0A1628;
+    --navy-mid:  #112240;
+    --navy-soft: #1E3A5F;
+    --teal:      #00B4A6;
+    --teal-dim:  #009E91;
+    --ice:       #F0F6FF;
+    --white:     #FFFFFF;
+    --slate:     #64748B;
+    --slate-lt:  #94A3B8;
+    --amber:     #F59E0B;
+    --amber-lt:  #FEF3C7;
+    --red:       #EF4444;
+    --red-lt:    #FEE2E2;
+    --green:     #10B981;
+    --green-lt:  #D1FAE5;
+    --border:    #E2E8F0;
+    --sidebar-w: 240px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--ice);
+    color: var(--navy);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--navy);
+    position: relative;
+    overflow: hidden;
+  }
+  #login-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,180,166,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,180,166,.06) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  #login-screen::after {
+    content: '';
+    position: absolute;
+    width: 520px; height: 520px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,180,166,.15) 0%, transparent 70%);
+    top: -120px; right: -120px;
+  }
+  .login-card {
+    position: relative;
+    z-index: 1;
+    background: var(--navy-mid);
+    border: 1px solid rgba(0,180,166,.25);
+    border-radius: 20px;
+    padding: 48px 44px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 32px 80px rgba(0,0,0,.4);
+  }
+  .login-logo {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 32px;
+  }
+  .login-logo .icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--teal), var(--teal-dim));
+    border-radius: 10px;
+    display: grid; place-items: center;
+    font-size: 20px;
+  }
+  .login-logo h1 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 22px; font-weight: 700;
+    color: var(--white);
+    letter-spacing: -0.3px;
+  }
+  .login-logo span { color: var(--teal); }
+  .login-subtitle {
+    color: var(--slate-lt);
+    font-size: 13px;
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    color: var(--slate-lt);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .field input, .field select {
+    width: 100%;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    transition: border-color .2s, background .2s;
+    outline: none;
+    appearance: none;
+  }
+  .field input::placeholder { color: rgba(255,255,255,.3); }
+  .field input:focus, .field select:focus {
+    border-color: var(--teal);
+    background: rgba(0,180,166,.08);
+  }
+  .field select option { background: var(--navy-mid); color: var(--white); }
+  .login-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--teal), var(--teal-dim));
+    color: var(--white);
+    border: none;
+    border-radius: 10px;
+    padding: 13px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: opacity .2s, transform .1s;
+  }
+  .login-btn:hover { opacity: .9; transform: translateY(-1px); }
+  .login-btn:active { transform: translateY(0); }
+  .login-error {
+    background: var(--red-lt);
+    color: var(--red);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    margin-top: 12px;
+    display: none;
+  }
+  .login-hint {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,.08);
+    color: rgba(255,255,255,.35);
+    font-size: 12px;
+  }
+  .login-hint strong { color: var(--teal); font-weight: 500; }
+
+  /* ── APP SHELL ── */
+  #app { display: none; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: var(--navy);
+    display: flex; flex-direction: column;
+    z-index: 100;
+    overflow: hidden;
+  }
+  .sidebar::before {
+    content: '';
+    position: absolute;
+    bottom: -60px; right: -60px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,180,166,.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .sb-brand {
+    padding: 24px 20px 16px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  .sb-brand .icon {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--teal), var(--teal-dim));
+    border-radius: 8px;
+    display: grid; place-items: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .sb-brand h2 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px; font-weight: 700;
+    color: var(--white);
+  }
+  .sb-brand h2 span { color: var(--teal); }
+  .sb-user {
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    margin-bottom: 8px;
+  }
+  .sb-user .role-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(0,180,166,.15);
+    color: var(--teal);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+  }
+  .sb-user .name {
+    color: var(--white);
+    font-weight: 500;
+    font-size: 13px;
+    margin-top: 6px;
+  }
+  .sb-nav { flex: 1; padding: 0 12px; overflow-y: auto; }
+  .sb-nav .nav-section {
+    color: rgba(255,255,255,.25);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 14px 8px 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    border-radius: 9px;
+    color: rgba(255,255,255,.55);
+    cursor: pointer;
+    transition: background .15s, color .15s;
+    margin-bottom: 2px;
+    font-size: 13.5px;
+    font-weight: 400;
+    user-select: none;
+  }
+  .nav-item:hover { background: rgba(255,255,255,.06); color: var(--white); }
+  .nav-item.active {
+    background: rgba(0,180,166,.18);
+    color: var(--teal);
+    font-weight: 500;
+  }
+  .nav-item .ni { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+  .sb-footer {
+    padding: 16px 12px;
+    border-top: 1px solid rgba(255,255,255,.06);
+  }
+  .logout-btn {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%;
+    background: none;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 9px;
+    padding: 9px 12px;
+    color: rgba(255,255,255,.45);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .logout-btn:hover {
+    background: rgba(239,68,68,.1);
+    border-color: rgba(239,68,68,.3);
+    color: var(--red);
+  }
+
+  /* Main content */
+  .main {
+    margin-left: var(--sidebar-w);
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  .topbar {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-left h3 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 17px; font-weight: 600;
+  }
+  .topbar-left p { color: var(--slate); font-size: 12px; margin-top: 1px; }
+  .topbar-right { display: flex; align-items: center; gap: 14px; }
+  .tb-avatar {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--teal), var(--teal-dim));
+    border-radius: 50%;
+    display: grid; place-items: center;
+    color: var(--white);
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .content { padding: 28px; flex: 1; }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Stats row */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 20px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--teal);
+    border-radius: 14px 14px 0 0;
+  }
+  .stat-card.amber::before { background: var(--amber); }
+  .stat-card.green::before { background: var(--green); }
+  .stat-card.red::before { background: var(--red); }
+  .stat-icon {
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+  .stat-val {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--navy);
+  }
+  .stat-label {
+    color: var(--slate);
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  /* Cards/Tables */
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-header h4 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 600;
+  }
+  .card-header p { color: var(--slate); font-size: 12px; margin-top: 2px; }
+  .card-body { padding: 0; overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    background: #F8FAFC;
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--slate);
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 11px 16px;
+    border-bottom: 1px solid #F1F5F9;
+    color: var(--navy);
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: #F8FAFC; }
+
+  /* Badges */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .badge-teal { background: rgba(0,180,166,.1); color: var(--teal-dim); }
+  .badge-amber { background: var(--amber-lt); color: #92400E; }
+  .badge-red { background: var(--red-lt); color: #991B1B; }
+  .badge-green { background: var(--green-lt); color: #065F46; }
+
+  /* Section grid */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* Page header */
+  .page-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 22px; font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .page-desc { color: var(--slate); font-size: 13px; margin-bottom: 24px; }
+
+  /* Action btn */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: opacity .15s, transform .1s;
+  }
+  .btn:hover { opacity: .88; transform: translateY(-1px); }
+  .btn-primary { background: var(--teal); color: var(--white); }
+  .btn-secondary { background: #F1F5F9; color: var(--navy); }
+  .btn-ghost {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--slate);
+  }
+  .btn-ghost:hover { border-color: var(--teal); color: var(--teal); }
+
+  /* ── PROFESSIONAL CRUD MODAL ── */
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    background: #F8FAFC;
+  }
+  .modal-header-left { display: flex; align-items: center; gap: 12px; }
+  .modal-icon {
+    width: 40px; height: 40px;
+    background: var(--teal);
+    border-radius: 10px;
+    display: grid; place-items: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .modal-title {
+    margin: 0;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--navy);
+  }
+  .modal-subtitle {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: var(--slate);
+  }
+  .modal-close {
+    width: 32px; height: 32px;
+    background: rgba(0,0,0,.04);
+    border: none;
+    border-radius: 8px;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--slate);
+    cursor: pointer;
+    transition: all .15s;
+    display: grid; place-items: center;
+  }
+  .modal-close:hover { background: rgba(0,0,0,.08); color: var(--navy); }
+  .modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .modal-field { margin-bottom: 18px; }
+  .modal-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--navy);
+    margin-bottom: 6px;
+  }
+  .modal-label .req { color: var(--red); margin-left: 2px; }
+  .modal-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    color: var(--navy);
+    background: var(--white);
+    transition: border-color .18s, box-shadow .18s;
+    outline: none;
+  }
+  .modal-input::placeholder { color: #94A3B8; }
+  .modal-input:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(13,148,136,.12);
+  }
+  .modal-input:disabled {
+    background: #F8FAFC;
+    color: var(--slate);
+    cursor: not-allowed;
+  }
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    background: #F8FAFC;
+    justify-content: flex-end;
+  }
+  .modal-footer .btn {
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  /* Expiry status */
+  .expiry-ok { color: var(--green); font-size: 12px; }
+  .expiry-soon { color: var(--amber); font-size: 12px; }
+  .expiry-expired { color: var(--red); font-size: 12px; }
+
+  /* Progress bars */
+  .progress-wrap { margin-top: 4px; }
+  .progress-bar {
+    height: 5px;
+    border-radius: 99px;
+    background: #E2E8F0;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--teal);
+    transition: width .4s ease;
+  }
+  .progress-fill.amber { background: var(--amber); }
+  .progress-fill.red { background: var(--red); }
+
+  /* Info row */
+  .info-row {
+    display: flex; justify-content: space-between;
+    padding: 12px 20px;
+    border-bottom: 1px solid #F1F5F9;
+    font-size: 13px;
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-row .lbl { color: var(--slate); }
+  .info-row .val { font-weight: 500; }
+
+  /* Mobile menu toggle */
+  .menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--navy);
+    padding: 4px;
+  }
+
+  /* Mobile overlay */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 99;
+  }
+
+  @media (max-width: 768px) {
+    :root { --sidebar-w: 240px; }
+    .main { margin-left: 0; }
+    .sidebar {
+      transform: translateX(-100%);
+      transition: transform .25s ease;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay.open { display: block; }
+    .menu-toggle { display: block; }
+    .content { padding: 18px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .topbar { padding: 0 18px; }
+  }
+
+  /* Alert pulse */
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.5; } }
+  .pulse { animation: pulse 2s infinite; }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 40px; color: var(--slate-lt); font-size: 13px; }
+  .empty .emoji { font-size: 32px; margin-bottom: 8px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+
+<!-- ═══════════════════ LOGIN ═══════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="icon">💉</div>
+      <h1>Vax<span>Track</span></h1>
+    </div>
+    <p class="login-subtitle">Vaccine Distribution Management System.<br>Sign in to access your dashboard.</p>
+
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="username" placeholder="Enter username" autocomplete="off"/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Enter password"/>
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="login-error">⚠ Invalid credentials. Please check and try again.</div>
+
+    <div class="login-hint">
+      Admin: <strong>admin / admin123</strong> &nbsp;|&nbsp; Nurse: <strong>nurseny</strong> / <strong>nurse789</strong><br><span style="font-size:11px;opacity:.6;">Role auto-detected.</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ APP ═══════════════════ -->
+<div id="app">
+  <div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand">
+      <div class="icon">💉</div>
+      <h2>Vax<span>Track</span></h2>
+    </div>
+    <div class="sb-user">
+      <div class="role-badge" id="sb-role-badge">⬤ Admin</div>
+      <div class="name" id="sb-username">Administrator</div>
+    </div>
+    <nav class="sb-nav" id="sb-nav"></nav>
+    <div class="sb-footer">
+      <button class="logout-btn" onclick="doLogout()">
+        <span>🚪</span> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="topbar-left">
+          <h3 id="topbar-title">Dashboard</h3>
+          <p id="topbar-sub">Overview of vaccine distribution</p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div style="text-align:right;">
+          <div style="font-weight:500;font-size:13px;" id="tb-user">Admin</div>
+          <div style="color:var(--slate);font-size:11px;" id="tb-role">Administrator</div>
+        </div>
+        <div class="tb-avatar" id="tb-avatar">A</div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ── OVERVIEW / DASHBOARD ── -->
+      <div class="panel active" id="panel-overview">
+        <div class="page-title">Dashboard Overview</div>
+        <div class="page-desc" id="dash-desc">Welcome back. Here's what's happening across the vaccine distribution network.</div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">🏭</div>
+            <div class="stat-val" id="dash-supplier-count">—</div>
+            <div class="stat-label">Suppliers</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-icon">💉</div>
+            <div class="stat-val" id="dash-vaccine-count">—</div>
+            <div class="stat-label">Vaccine Types</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🏥</div>
+            <div class="stat-val" id="dash-facility-count">—</div>
+            <div class="stat-label">Facilities</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-icon pulse">⚠️</div>
+            <div class="stat-val" id="expiry-count">2</div>
+            <div class="stat-label">Expiring ≤12 months</div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <!-- Vaccine expiry chart -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h4>Vaccine Expiry Timeline</h4>
+                <p>Days until expiry by vaccine — red &lt;30d, orange &lt;90d, green &gt;90d</p>
+              </div>
+            </div>
+            <div class="card-body" style="padding:20px;position:relative;height:320px;">
+              <div id="expiry-chart" style="display:flex;flex-direction:column;gap:12px;"></div>
+            </div>
+          </div>
+
+          <!-- Facilities summary -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h4>Distribution Facilities</h4>
+                <p>Active facility network locations</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="info-row">
+                <span class="lbl">🏥 National Association for School Nurses</span>
+                <span class="val badge badge-teal">New York</span>
+              </div>
+              <div class="info-row">
+                <span class="lbl">🏥 Sabin Vaccine Institute</span>
+                <span class="val badge badge-teal">Texas</span>
+              </div>
+              <div class="info-row">
+                <span class="lbl">🏥 Task Force for Global Health</span>
+                <span class="val badge badge-teal">Finland</span>
+              </div>
+              <div style="padding: 16px 20px; border-top: 1px solid var(--border); margin-top: 8px;">
+                <div style="font-size:12px;color:var(--slate);margin-bottom:8px;">Network Coverage</div>
+                <div style="display:flex;gap:16px;font-size:12px;">
+                  <div>🇺🇸 <strong>2</strong> USA</div>
+                  <div>🇫🇮 <strong>1</strong> Europe</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── VACCINES ── -->
+      <div class="panel" id="panel-vaccines">
+        <div class="page-title">Vaccines</div>
+        <div class="page-desc">Catalog of all registered vaccine products and their details.</div>
+        <div class="card">
+          <div class="card-header">
+            <div><h4>All Vaccines</h4><p>5 vaccine products registered</p></div>
+            <div id="admin-add-vaccine" style="display:none;">
+              <button class="btn btn-primary" onclick="openModal('vaccines')">＋ Add Vaccine</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th><th>Vaccine Name</th><th>Supplier</th><th>Expiry Date</th><th>Days Left</th><th>Status</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="vaccines-table-body">
+                <tr><td colspan="7" style="text-align:center;color:var(--slate);">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SUPPLIERS ── -->
+      <div class="panel" id="panel-suppliers">
+        <div class="page-title">Suppliers</div>
+        <div class="page-desc">Registered pharmaceutical suppliers and their contact information.</div>
+        <div class="card">
+          <div class="card-header">
+            <div><h4>All Suppliers</h4><p>5 registered suppliers</p></div>
+            <div id="admin-add-supplier" style="display:none;">
+              <button class="btn btn-primary" onclick="openModal('suppliers')">＋ Add Supplier</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <table>
+              <thead>
+                <tr><th>#</th><th>Supplier Name</th><th>Contact</th><th>Vaccines</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="suppliers-table-body">
+                <tr><td colspan="5" style="text-align:center;color:var(--slate);">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── FACILITIES ── -->
+      <div class="panel" id="panel-facilities">
+        <div class="page-title">Facilities</div>
+        <div class="page-desc">Healthcare facilities receiving vaccine distributions.</div>
+        <div class="stats-grid" style="max-width:600px;">
+          <div class="card" style="margin:0;">
+            <div style="padding:20px;">
+              <div style="font-size:22px;margin-bottom:8px;">🏥</div>
+              <div style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;">Nat. Assoc. for School Nurses</div>
+              <div style="color:var(--slate);font-size:12px;margin-top:4px;">📍 New York, USA</div>
+              <div style="margin-top:12px;"><span class="badge badge-green">Active</span></div>
+            </div>
+          </div>
+          <div class="card" style="margin:0;">
+            <div style="padding:20px;">
+              <div style="font-size:22px;margin-bottom:8px;">🏥</div>
+              <div style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;">Sabin Vaccine Institute</div>
+              <div style="color:var(--slate);font-size:12px;margin-top:4px;">📍 Texas, USA</div>
+              <div style="margin-top:12px;"><span class="badge badge-green">Active</span></div>
+            </div>
+          </div>
+          <div class="card" style="margin:0;">
+            <div style="padding:20px;">
+              <div style="font-size:22px;margin-bottom:8px;">🏥</div>
+              <div style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;">Task Force for Global Health</div>
+              <div style="color:var(--slate);font-size:12px;margin-top:4px;">📍 Finland, Europe</div>
+              <div style="margin-top:12px;"><span class="badge badge-green">Active</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:20px;">
+          <div class="card-header">
+            <div><h4>Facility Details</h4><p>IDs and full records</p></div>
+            <div id="admin-add-facility" style="display:none;">
+              <button class="btn btn-primary" onclick="openModal('facilities')">＋ Add Facility</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>Facility Name</th><th>Location</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="facilities-table-body">
+                <tr><td colspan="4" style="text-align:center;color:var(--slate);">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DISTRIBUTION ── -->
+      <div class="panel" id="panel-distribution">
+        <div class="page-title">Distribution Records</div>
+        <div class="page-desc">Track vaccine shipments from suppliers to healthcare facilities.</div>
+        <div class="card">
+          <div class="card-header">
+            <div><h4>Distribution Log</h4><p>All recorded distribution events</p></div>
+            <div id="admin-add-dist" style="display:none;">
+              <button class="btn btn-primary" onclick="openModal('distribution')">＋ Record Distribution</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <table>
+              <thead>
+                <tr><th>Dist. ID</th><th>Vaccine</th><th>Facility</th><th>Quantity</th><th>Date</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="distribution-table-body">
+                <tr><td colspan="6" style="text-align:center;color:var(--slate);">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STOCK ── -->
+      <div class="panel" id="panel-stock">
+        <div class="page-title">Stock Inventory</div>
+        <div class="page-desc">Current stock levels at each facility across all vaccine types.</div>
+        <div class="stats-grid">
+          <div class="stat-card green">
+            <div class="stat-icon">📦</div>
+            <div class="stat-val" id="stock-total-units">—</div>
+            <div class="stat-label">Total Units in Stock</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-icon">🏥</div>
+            <div class="stat-val" id="stock-facilities-count">—</div>
+            <div class="stat-label">Facilities Stocked</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">💉</div>
+            <div class="stat-val" id="stock-vaccine-types">—</div>
+            <div class="stat-label">Vaccine Types Active</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div><h4>Stock by Facility &amp; Vaccine</h4></div>
+            <div id="admin-add-stock" style="display:none;">
+              <button class="btn btn-primary" onclick="openModal('stock')">＋ Update Stock</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <table>
+              <thead>
+                <tr><th>Stock ID</th><th>Facility</th><th>Vaccine</th><th>Quantity</th><th>Level</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="stock-table-body">
+                <tr><td colspan="6" style="text-align:center;color:var(--slate);">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ADMIN PANEL (admin only) ── -->
+      <div class="panel" id="panel-admin">
+        <div class="page-title">Administration</div>
+        <div class="page-desc">System configuration, user management, and audit tools.</div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><div><h4>System Overview</h4></div></div>
+            <div class="info-row"><span class="lbl">Database Status</span><span class="val badge badge-green">● Online</span></div>
+            <div class="info-row"><span class="lbl">Last Sync</span><span class="val">Today, 09:14</span></div>
+            <div class="info-row"><span class="lbl">Total Records</span><span class="val">21 entries</span></div>
+            <div class="info-row"><span class="lbl">Active Users</span><span class="val">2</span></div>
+            <div class="info-row"><span class="lbl">Server Region</span><span class="val">US-East</span></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div><h4>Quick Actions</h4></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
+              <button class="btn btn-primary" style="justify-content:flex-start;" onclick="openModal('vaccines')">💉 Add New Vaccine</button>
+              <button class="btn btn-primary" style="justify-content:flex-start;" onclick="openModal('suppliers')">🏭 Register Supplier</button>
+              <button class="btn btn-primary" style="justify-content:flex-start;" onclick="openModal('facilities')">🏥 Add Facility</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div><h4>User Accounts</h4><p>Manage system access</p></div>
+            <div id="admin-add-user" style="display:none;">
+              <button class="btn btn-primary" onclick="openModal('users')">＋ Add User</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <table>
+              <thead><tr><th>Username</th><th>Role</th><th>Facility</th><th>Actions</th></tr></thead>
+              <tbody id="users-table-body">
+                <tr><td colspan="4" style="text-align:center;color:var(--slate);">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MY FACILITY (client only) ── -->
+      <div class="panel" id="panel-myfacility">
+        <div class="page-title">My Facility</div>
+        <div class="page-desc">Your assigned facility's stock and distribution records.</div>
+        <div class="card">
+          <div style="padding:20px;display:flex;align-items:center;gap:16px;">
+            <div style="font-size:36px;">🏥</div>
+            <div>
+              <div style="font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;" id="myfacility-name">—</div>
+              <div style="color:var(--slate);font-size:13px;" id="myfacility-location">—</div>
+              <div style="margin-top:6px;"><span class="badge badge-green">Active</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><div><h4>My Stock</h4><p>Current inventory at your facility</p></div></div>
+            <div class="card-body">
+              <table>
+                <thead><tr><th>Vaccine</th><th>Qty</th><th>Expiry</th></tr></thead>
+                <tbody id="myfacility-stock-body">
+                  <tr><td colspan="3" style="text-align:center;color:var(--slate);">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div><h4>Received Distributions</h4></div></div>
+            <div class="card-body">
+              <table>
+                <thead><tr><th>Vaccine</th><th>Qty</th><th>Date</th></tr></thead>
+                <tbody id="myfacility-dist-body">
+                  <tr><td colspan="3" style="text-align:center;color:var(--slate);">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── REQUESTS (nurse + admin) ── -->
+      <div class="panel" id="panel-requests">
+        <div class="page-title">Vaccine Requests</div>
+        <div class="page-desc" id="requests-desc">Submit and track requests for your facility.</div>
+
+        <div class="card" id="requests-nurse-form">
+          <div class="card-header">
+            <div><h4>📋 New Request</h4><p>Submit a request to admin</p></div>
+          </div>
+          <div class="card-body" style="padding:20px;">
+            <form onsubmit="submitRequest(event)" style="display:flex;flex-direction:column;gap:14px;">
+              <div class="modal-field">
+                <label>Request Type <span class="req">*</span></label>
+                <select id="req-type" required>
+                  <option value="">Select type…</option>
+                  <option value="new_vaccine">🆕 New Vaccine Needed</option>
+                  <option value="low_stock">⚠️ Low Stock / Restock</option>
+                  <option value="other">📝 Other Request</option>
+                </select>
+              </div>
+              <div class="modal-field" id="req-vaccine-field" style="display:none;">
+                <label>Vaccine Name <span class="req">*</span></label>
+                <input type="text" id="req-vaccine-name" placeholder="e.g. HPV Vaccine (Gardasil)">
+              </div>
+              <div class="modal-field" id="req-qty-field" style="display:none;">
+                <label>Quantity Needed</label>
+                <input type="number" id="req-quantity" placeholder="e.g. 500 doses">
+              </div>
+              <div class="modal-field">
+                <label>Notes / Justification</label>
+                <textarea id="req-notes" rows="3" placeholder="Explain why this is needed…" style="resize:vertical;"></textarea>
+              </div>
+              <div style="display:flex;gap:10px;">
+                <button type="submit" class="btn btn-primary" style="font-weight:500;">📤 Submit Request</button>
+                <button type="reset" class="btn btn-ghost" onclick="resetRequestForm()">Clear</button>
+              </div>
+              <div id="req-error" style="display:none;background:#FEE2E2;color:#991B1B;border-radius:8px;padding:10px 14px;font-size:13px;"></div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><h4>Request History</h4><p id="requests-count">Track your requests</p></div>
+            <button class="btn-export" onclick="exportCSV('vaccine-requests')">📥 CSV</button>
+          </div>
+          <div class="card-body">
+            <table>
+              <thead><tr><th>ID</th><th>Date</th><th>Type</th><th>Vaccine</th><th>Qty</th><th>Status</th><th>Admin Notes</th><th>Actions</th></tr></thead>
+              <tbody id="requests-table-body"><tr><td colspan="8" style="text-align:center;padding:24px;color:#94A3B8;">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── AUDIT LOG (admin only) ── -->
+      <div class="panel" id="panel-audit">
+        <div class="page-title">Audit Log</div>
+        <div class="page-desc">System activity and user actions</div>
+        <div class="card">
+          <div class="card-header">
+            <div><h4>Audit Trail</h4><p>All recorded system events</p></div>
+          </div>
+          <div class="card-body">
+            <table>
+              <thead>
+                <tr><th>Time</th><th>User</th><th>Action</th><th>Entity</th><th>Details</th></tr>
+              </thead>
+              <tbody id="audit-table-body">
+                <tr><td colspan="5" style="text-align:center;color:var(--slate);">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STOCK TRANSFERS (admin only) ── -->
+      <div class="panel" id="panel-transfers">
+        <div class="page-title">Stock Transfers</div>
+        <div class="page-desc">Transfer stock between facilities</div>
+        <div class="card">
+          <div class="card-header">
+            <div><h4>Transfer Records</h4><p>All inter-facility stock movements</p></div>
+            <div id="admin-add-transfer" style="display:none;">
+              <button class="btn btn-primary" onclick="openModal('stock_transfers')">＋ Add Transfer</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <table>
+              <thead>
+                <tr><th>Transfer ID</th><th>Vaccine</th><th>From Facility</th><th>To Facility</th><th>Quantity</th><th>Date</th><th>Notes</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="transfers-table-body">
+                <tr><td colspan="8" style="text-align:center;color:var(--slate);">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══════════════════ PROFESSIONAL CRUD MODAL ═══════════════════ -->
+<div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:1000;align-items:center;justify-content:center;opacity:0;transition:opacity.2s ease;">
+  <div class="modal-card" style="background:var(--white);border-radius:16px;width:90%;max-width:460px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 25px 50px -12px rgba(0,0,0,.25);transform:scale(.95);transition:transform.2s ease;">
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <span id="modal-icon" class="modal-icon">💉</span>
+        <div>
+          <h3 id="modal-title" class="modal-title">Add Record</h3>
+          <p id="modal-subtitle" class="modal-subtitle">Create a new record</p>
+        </div>
+      </div>
+      <button type="button" class="modal-close" onclick="closeModal()" aria-label="Close">×</button>
+    </div>
+    <!-- Body -->
+    <form id="modal-form" onsubmit="submitModal(event)" class="modal-body">
+      <div id="modal-fields"></div>
+      <div id="modal-error" style="display:none;background:#FEF2F2;color:#DC2626;padding:12px;border-radius:8px;font-size:13px;margin-top:16px;border:1px solid #FECACA;"></div>
+      <!-- Footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Record</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ── Auth ──
+const API_BASE = '/api';
+let currentUser = null;
+
+/** Wrapper around fetch: same-origin, sends/receives the session cookie, parses JSON. */
+function apiFetch(path, options = {}) {
+  return fetch(API_BASE + path, {
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', ...(options.headers || {}) },
+    ...options,
+  }).then(async r => {
+    let body = null;
+    try { body = await r.json(); } catch (e) { /* no body */ }
+    return body;
+  });
+}
+
+function loadExpiryChart(data) {
+  const render = (vaccines) => {
+    const container = document.getElementById('expiry-chart');
+    if (!container) return;
+
+    const today = new Date();
+    const maxDays = 365;
+
+    container.innerHTML = vaccines.map(v => {
+      const daysLeft = v.expiry_date
+        ? Math.max(0, Math.ceil((new Date(v.expiry_date) - today) / 86400000))
+        : maxDays;
+      const pct = Math.min(100, Math.round((daysLeft / maxDays) * 100));
+      let color, statusText;
+      if (daysLeft < 30) { color = '#EF4444'; statusText = '⚠️ Critical'; }
+      else if (daysLeft < 90) { color = '#F59E0B'; statusText = '🔶 Warning'; }
+      else { color = '#10B981'; statusText = '✅ Safe'; }
+
+      return `
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:12px 16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-weight:600;font-size:13px;color:#0A1628;">${esc(v.vaccine_name || 'Vaccine #' + v.vaccine_id)}</span>
+            <span style="font-size:12px;color:${color};font-weight:600;">${daysLeft}d — ${statusText}</span>
+          </div>
+          <div style="background:#E2E8F0;border-radius:99px;height:10px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;background:${color};border-radius:99px;transition:width .6s ease;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px;">
+            <span style="font-size:11px;color:#94A3B8;">Today</span>
+            <span style="font-size:11px;color:#94A3B8;">${v.expiry_date || 'No expiry'}</span>
+          </div>
+        </div>`;
+    }).join('');
+  };
+  if (data) { render(data); return; }
+  apiFetch('/vaccines').then(res => {
+    if (res?.success) render(res.data);
+  });
+}
+
+
+function checkSession() {
+  return apiFetch('/me').then(res => {
+    if (res && res.success) {
+      currentUser = {
+        username: res.data.username,
+        role: res.data.role,
+        name: res.data.full_name || res.data.username,
+        facility_id: res.data.facility_id,
+        facility_name: res.data.facility_name,
+        location: res.data.location,
+      };
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      setupApp();
+    } else {
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('app').style.display = 'none';
+    }
+  });
+}
+
+
+function doLogin() {
+  const u = document.getElementById('username').value.trim();
+  const p = document.getElementById('password').value;
+  const err = document.getElementById('login-error');
+  err.style.display = 'none';
+
+  if (!u || !p) {
+    err.textContent = '⚙ Please fill in username and password.';
+    err.style.display = 'block';
+    return;
+  }
+
+  apiFetch('/login', { method: 'POST', body: JSON.stringify({ username: u, password: p }) })
+    .then(res => {
+      if (!res || !res.success) {
+        err.textContent = '⚠ ' + (res?.message || 'Invalid credentials. Please check and try again.');
+        err.style.display = 'block';
+        return;
+      }
+      currentUser = {
+        username: res.data.username,
+        role: res.data.role,
+        name: res.data.full_name || res.data.username,
+        facility_id: res.data.facility_id,
+        facility_name: res.data.facility_name,
+        location: res.data.location,
+      };
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      setupApp();
+    })
+    .catch(() => {
+      err.textContent = '⚠ Could not reach the server. Is the backend running?';
+      err.style.display = 'block';
+    });
+}
+
+function doLogout() {
+  apiFetch('/logout', { method: 'POST' }).finally(() => {
+    currentUser = null;
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    
+  });
+}
+
+// ── Navigation config ──
+const NAV_ADMIN = [
+  { section: 'Overview', items: [
+    { id: 'overview',      icon: '📊', label: 'Dashboard' },
+  ]},
+  { section: 'Data Management', items: [
+    { id: 'vaccines',      icon: '💉', label: 'Vaccines' },
+    { id: 'suppliers',     icon: '🏭', label: 'Suppliers' },
+    { id: 'facilities',    icon: '🏥', label: 'Facilities' },
+    { id: 'distribution',  icon: '🚚', label: 'Distribution' },
+    { id: 'stock',         icon: '📦', label: 'Stock' },
+    { id: 'transfers',     icon: '🔄', label: 'Transfers' },
+    { id: 'requests',     icon: '📋', label: 'Requests' },
+  ]},
+  { section: 'System', items: [
+    { id: 'admin',         icon: '⚙️', label: 'Administration' },
+    { id: 'audit',         icon: '📝', label: 'Audit Log' },
+  ]}
+];
+
+const NAV_NURSE = [
+  { section: 'Overview', items: [
+    { id: 'overview',      icon: '📊', label: 'Dashboard' },
+  ]},
+  { section: 'My Facility', items: [
+    { id: 'myfacility',   icon: '🏥', label: 'My Facility' },
+    { id: 'vaccines',     icon: '💉', label: 'Vaccines' },
+    { id: 'stock',        icon: '📦', label: 'Stock Levels' },
+    { id: 'distribution', icon: '🚚', label: 'Distributions' },
+  ]},
+  { section: 'Support', items: [
+    { id: 'requests',     icon: '📋', label: 'Submit Request' },
+  ]}
+];
+
+const PANEL_TITLES = {
+  overview:     ['Dashboard Overview', 'Vaccine distribution network summary'],
+  vaccines:     ['Vaccines', 'Registered vaccine products'],
+  suppliers:    ['Suppliers', 'Pharmaceutical supplier registry'],
+  facilities:   ['Facilities', 'Healthcare distribution facilities'],
+  distribution: ['Distribution', 'Shipment and delivery records'],
+  stock:        ['Stock Inventory', 'Current vaccine stock levels'],
+  admin:        ['Administration', 'System settings and user management'],
+  myfacility:   ['My Facility', 'Your facility stock and records'],
+  requests:     ['Vaccine Requests', 'Submit and track facility requests'],
+  audit:        ['Audit Log', 'System activity and user actions'],
+  transfers:    ['Stock Transfers', 'Transfer stock between facilities'],
+};
+
+function setupApp() {
+  const { role, name, username } = currentUser;
+
+  // Sidebar user info
+  document.getElementById('sb-role-badge').textContent = role === 'admin' ? '⬤ Admin' : '⬤ Nurse';
+  document.getElementById('sb-role-badge').style.background = role === 'admin' ? 'rgba(239,68,68,.15)' : 'rgba(0,180,166,.15)';
+  document.getElementById('sb-role-badge').style.color = role === 'admin' ? '#dc2626' : 'var(--teal)';
+  document.getElementById('sb-username').textContent = name;
+
+  // Topbar
+  document.getElementById('tb-user').textContent = name;
+  document.getElementById('tb-role').textContent = role === 'admin' ? 'Administrator' : 'Nurse';
+  document.getElementById('tb-avatar').textContent = username[0].toUpperCase();
+
+  // Build nav
+  const navCfg = role === 'admin' ? NAV_ADMIN : NAV_NURSE;
+  const nav = document.getElementById('sb-nav');
+  nav.innerHTML = '';
+  navCfg.forEach(sec => {
+    const div = document.createElement('div');
+    div.innerHTML = `<div class="nav-section">${sec.section}</div>`;
+    sec.items.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'nav-item' + (item.id === 'overview' ? ' active' : '');
+      el.dataset.panel = item.id;
+      el.innerHTML = `<span class="ni">${item.icon}</span><span>${item.label}</span>`;
+      el.onclick = () => navigate(item.id);
+      div.appendChild(el);
+    });
+    nav.appendChild(div);
+  });
+
+  // Admin-only buttons
+  const adminEls = ['admin-add-vaccine','admin-add-supplier','admin-add-facility','admin-add-dist','admin-add-stock','admin-add-user','admin-add-transfer'];
+  adminEls.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = role === 'admin' ? 'block' : 'none';
+  });
+
+  // Welcome message
+  document.getElementById('dash-desc').textContent = role === 'admin'
+    ? `Welcome back, ${name}. Full administrative access active.`
+    : `Welcome, ${name}. You have read access to your facility's data.`;
+
+  loadedPanels.clear();
+  navigate('overview');
+}
+
+function navigate(panelId) {
+  // Hide all panels
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('panel-' + panelId);
+  if (target) target.classList.add('active');
+
+  // Update nav items
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.panel === panelId);
+  });
+
+  // Topbar title
+  const [title, sub] = PANEL_TITLES[panelId] || ['', ''];
+  document.getElementById('topbar-title').textContent = title;
+  document.getElementById('topbar-sub').textContent = sub;
+
+  loadPanelData(panelId);
+  closeSidebar();
+}
+
+// ── Data loading (lazy, cached per session) ──
+const loadedPanels = new Set();
+const STATUS_BADGE = {
+  expired: '<span class="badge badge-red">Expired</span>',
+  expiring_soon: '<span class="badge badge-amber">⚠ Expiring Soon</span>',
+  valid: '<span class="badge badge-teal">✓ Valid</span>',
+  long_shelf_life: '<span class="badge badge-green">✓ Long Shelf Life</span>',
+};
+const esc = s => (s ?? '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function loadPanelData(panelId) {
+  if (panelId === 'overview') { loadDashboard(); return; } // always refresh counts
+  if (loadedPanels.has(panelId)) return;
+  loadedPanels.add(panelId);
+
+  if (panelId === 'vaccines') loadVaccines();
+  else if (panelId === 'suppliers') loadSuppliers();
+  else if (panelId === 'facilities') loadFacilities();
+  else if (panelId === 'distribution') loadDistribution();
+  else if (panelId === 'stock') loadStock();
+  else if (panelId === 'admin') loadUsers();
+  else if (panelId === 'myfacility') loadMyFacility();
+  else if (panelId === 'requests') loadRequests();
+  else if (panelId === 'audit') loadAuditLogs();
+    else if (panelId === 'transfers') loadTransfers();
+}
+
+function loadDashboard() {
+  apiFetch('/dashboard').then(res => {
+    if (!res?.success) return;
+    const d = res.data;
+    document.getElementById('dash-supplier-count').textContent = d.supplier_count;
+    document.getElementById('dash-vaccine-count').textContent = d.vaccine_count;
+    document.getElementById('dash-facility-count').textContent = d.facility_count;
+    document.getElementById('expiry-count').textContent = d.expiring_soon;
+  });
+
+  apiFetch('/vaccines').then(res => {
+    if (!res?.success) return;
+    loadExpiryChart(res.data);
+  });
+}
+
+function loadVaccines() {
+  apiFetch('/vaccines').then(res => {
+    const tbody = document.getElementById('vaccines-table-body');
+    if (!res?.success) { tbody.innerHTML = '<tr><td colspan="6">Failed to load.</td></tr>'; return; }
+    tbody.innerHTML = res.data.map(v => `
+      <tr>
+        <td>${String(v.vaccine_id).padStart(2,'0')}</td>
+        <td><strong>${esc(v.vaccine_name)}</strong></td>
+        <td>${esc(v.supplier_name) || '—'}</td>
+        <td>${esc(v.expiry_date)}</td>
+        <td>${v.days_left >= 0 ? '~' + v.days_left + ' days' : 'Expired'}</td>
+        <td>${STATUS_BADGE[v.status] || ''}</td>
+        <td>${rowActions('vaccines', v.vaccine_id, v)}</td>
+      </tr>`).join('') || '<tr><td colspan="7">No vaccines registered.</td></tr>';
+  });
+}
+
+function loadSuppliers() {
+  apiFetch('/suppliers').then(res => {
+    const tbody = document.getElementById('suppliers-table-body');
+    if (!res?.success) { tbody.innerHTML = '<tr><td colspan="4">Failed to load.</td></tr>'; return; }
+    tbody.innerHTML = res.data.map(s => `
+      <tr>
+        <td>${String(s.supplier_id).padStart(2,'0')}</td>
+        <td><strong>${esc(s.supplier_name)}</strong></td>
+        <td style="font-size:11px;color:var(--slate)">${esc(s.contact) || '—'}</td>
+        <td><span class="badge ${s.vaccine_count > 0 ? 'badge-teal' : 'badge-amber'}">${s.vaccine_count} vaccine${s.vaccine_count === 1 ? '' : 's'}</span></td>
+        <td>${rowActions('suppliers', s.supplier_id, s)}</td>
+      </tr>`).join('') || '<tr><td colspan="5">No suppliers registered.</td></tr>';
+  });
+}
+
+function loadFacilities() {
+  apiFetch('/facilities').then(res => {
+    const tbody = document.getElementById('facilities-table-body');
+    if (!res?.success) { tbody.innerHTML = '<tr><td colspan="3">Failed to load.</td></tr>'; return; }
+    tbody.innerHTML = res.data.map(f => `
+      <tr>
+        <td>${String(f.facility_id).padStart(2,'0')}</td>
+        <td><strong>${esc(f.facility_name)}</strong></td>
+        <td>${esc(f.location_) || '—'}</td>
+        <td>${rowActions('facilities', f.facility_id, f)}</td>
+      </tr>`).join('') || '<tr><td colspan="4">No facilities registered.</td></tr>';
+  });
+}
+
+function loadDistribution() {
+  apiFetch('/distribution').then(res => {
+    const tbody = document.getElementById('distribution-table-body');
+    if (!res?.success) { tbody.innerHTML = '<tr><td colspan="5">Failed to load.</td></tr>'; return; }
+    tbody.innerHTML = res.data.map(d => `
+      <tr>
+        <td><span class="badge badge-teal">#${String(d.distribution_id).padStart(3,'0')}</span></td>
+        <td>${esc(d.vaccine_name)}</td>
+        <td>${esc(d.facility_name)}</td>
+        <td><strong>${d.quantity}</strong> units</td>
+        <td>${esc(d.distribution_date) || 'Pending'}</td>
+        <td>${rowActions('distribution', d.distribution_id, d)}</td>
+      </tr>`).join('') || '<tr><td colspan="6">No distribution records.</td></tr>';
+  });
+}
+
+function loadStock() {
+  apiFetch('/stock').then(res => {
+    const tbody = document.getElementById('stock-table-body');
+    if (!res?.success) { tbody.innerHTML = '<tr><td colspan="5">Failed to load.</td></tr>'; return; }
+    const rows = res.data;
+    const totalUnits = rows.reduce((sum, s) => sum + (s.quantity || 0), 0);
+    const facilities = new Set(rows.map(s => s.facility_id));
+    const vaccines = new Set(rows.map(s => s.vaccine_id));
+    document.getElementById('stock-total-units').textContent = totalUnits.toLocaleString();
+    document.getElementById('stock-facilities-count').textContent = facilities.size;
+    document.getElementById('stock-vaccine-types').textContent = vaccines.size;
+
+    const maxQty = Math.max(...rows.map(s => s.quantity || 0), 1);
+    tbody.innerHTML = rows.map(s => {
+      const pct = Math.round(((s.quantity || 0) / maxQty) * 100);
+      const low = pct < 30 ? ' amber' : '';
+      return `
+      <tr>
+        <td>ST-${String(s.stock_id).padStart(2,'0')}</td>
+        <td>${esc(s.facility_name)}</td>
+        <td>${esc(s.vaccine_name)}</td>
+        <td><strong>${s.quantity}</strong></td>
+        <td>
+          <div class="progress-wrap">
+            <div class="progress-bar"><div class="progress-fill${low}" style="width:${pct}%"></div></div>
+          </div>
+        </td>
+        <td>${rowActions('stock', s.stock_id, s)}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="6">No stock records.</td></tr>';
+  });
+}
+
+function loadUsers() {
+  if (currentUser.role !== 'admin') return;
+  apiFetch('/users').then(res => {
+    const tbody = document.getElementById('users-table-body');
+    if (!res?.success) { tbody.innerHTML = '<tr><td colspan="4">Failed to load.</td></tr>'; return; }
+    tbody.innerHTML = res.data.map(u => `
+      <tr>
+        <td>${esc(u.username)}</td>
+        <td><span class="badge ${u.role === 'admin' ? 'badge-red' : 'badge-teal'}">${u.role === 'admin' ? 'Admin' : 'Nurse'}</span></td>
+        <td>${esc(u.facility_name) || '—'}</td>
+        <td>${rowActions('users', u.user_id, u)}</td>
+      </tr>`).join('') || '<tr><td colspan="4">No users found.</td></tr>';
+  });
+}
+
+function loadMyFacility() {
+  document.getElementById('myfacility-name').textContent = currentUser.facility_name || '—';
+  document.getElementById('myfacility-location').textContent =
+    (currentUser.location ? '📍 ' + currentUser.location : '') + (currentUser.facility_id ? ` · Facility ID: ${String(currentUser.facility_id).padStart(2,'0')}` : '');
+
+  apiFetch('/stock').then(res => {
+    const tbody = document.getElementById('myfacility-stock-body');
+    if (!res?.success) { tbody.innerHTML = '<tr><td colspan="3">Failed to load.</td></tr>'; return; }
+    tbody.innerHTML = res.data.map(s => `
+      <tr><td><strong>${esc(s.vaccine_name)}</strong></td><td>${s.quantity} units</td><td>${esc(s.expiry_date) || '—'}</td></tr>
+    `).join('') || '<tr><td colspan="3">No stock at your facility yet.</td></tr>';
+  });
+
+  apiFetch('/distribution').then(res => {
+    const tbody = document.getElementById('myfacility-dist-body');
+    if (!res?.success) { tbody.innerHTML = '<tr><td colspan="3">Failed to load.</td></tr>'; return; }
+    tbody.innerHTML = res.data.map(d => `
+      <tr><td><strong>${esc(d.vaccine_name)}</strong></td><td>${d.quantity}</td><td>${esc(d.distribution_date) || '—'}</td></tr>
+    `).join('') || '<tr><td colspan="3">No distributions received yet.</td></tr>';
+  });
+}
+
+// ── VACCINE REQUEST SYSTEM ═══
+
+/** Show/hide conditional fields based on request type */
+document.addEventListener('change', function(e) {
+  if (e.target && e.target.id === 'req-type') {
+    const t = e.target.value;
+    document.getElementById('req-vaccine-field').style.display = (t === 'new_vaccine' || t === 'low_stock') ? 'block' : 'none';
+    document.getElementById('req-qty-field').style.display = (t === 'low_stock') ? 'block' : 'none';
+  }
+});
+
+function resetRequestForm() {
+  document.getElementById('req-type').value = '';
+  document.getElementById('req-vaccine-name').value = '';
+  document.getElementById('req-quantity').value = '';
+  document.getElementById('req-notes').value = '';
+  document.getElementById('req-vaccine-field').style.display = 'none';
+  document.getElementById('req-qty-field').style.display = 'none';
+  document.getElementById('req-error').style.display = 'none';
+}
+
+function loadAuditLogs() {
+  if (currentUser.role !== 'admin') {
+    document.getElementById('audit-table-body').innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--slate);padding:24px;">Access denied — admin only.</td></tr>';
+    return;
+  }
+  apiFetch('/audit-logs').then(res => {
+    const tbody = document.getElementById('audit-table-body');
+    if (!res?.success) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;">Failed to load.</td></tr>'; return; }
+    const entityIcons = { vaccines:'💉', suppliers:'🏭', facilities:'🏥', distribution:'🚚', stock:'📦', users:'👤', stock_transfers:'🔄' };
+    const actionColors = { create:'background:#D1FAE5;color:#065F46;', update:'background:#FEF3C7;color:#92400E;', delete:'background:#FEE2E2;color:#991B1B;' };
+    tbody.innerHTML = res.data.map(l => {
+      const icon = entityIcons[l.entity] || '📄';
+      const badge = actionColors[l.action] || '';
+      return `<tr>
+        <td style="white-space:nowrap;font-size:12px;">${esc(l.created_at)}</td>
+        <td>${esc(l.username)}</td>
+        <td><span style="${badge}padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:capitalize;">${l.action}</span></td>
+        <td>${icon} ${esc(l.entity)}</td>
+        <td style="font-size:12px;max-width:250px;white-space:normal;">${esc(l.details) || '—'}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="5" style="text-align:center;color:#94A3B8;">No audit logs yet.</td></tr>';
+  });
+}
+
+function loadTransfers() {
+  apiFetch('/stock-transfers').then(res => {
+    const tbody = document.getElementById('transfers-table-body');
+    if (!res?.success) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#94A3B8;">Failed to load.</td></tr>'; return; }
+    tbody.innerHTML = res.data.map(t => `<tr>
+      <td><span class="badge badge-teal">#${String(t.transfer_id).padStart(3,'0')}</span></td>
+      <td>${esc(t.vaccine_name) || '—'}</td>
+      <td>${esc(t.from_facility_name) || '—'}</td>
+      <td>${esc(t.to_facility_name) || '—'}</td>
+      <td><strong>${t.quantity}</strong> doses</td>
+      <td style="white-space:nowrap;font-size:12px;">${esc(t.transfer_date)}</td>
+      <td style="font-size:12px;max-width:150px;white-space:normal;">${esc(t.notes) || '—'}</td>
+      <td>${rowActions('stock_transfers', t.transfer_id, t)}</td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:#94A3B8;">No transfers yet.</td></tr>';
+  });
+}
+
+function submitRequest(e) {
+  e.preventDefault();
+  const err = document.getElementById('req-error');
+  err.style.display = 'none';
+
+  const type = document.getElementById('req-type').value;
+  const vaccineName = document.getElementById('req-vaccine-name').value.trim();
+  const quantity = document.getElementById('req-quantity').value.trim();
+  const notes = document.getElementById('req-notes').value.trim();
+
+  if (!type) { err.textContent = 'Please select a request type.'; err.style.display='block'; return; }
+  if ((type === 'new_vaccine' || type === 'low_stock') && !vaccineName) { err.textContent = 'Please enter the vaccine name.'; err.style.display='block'; return; }
+
+  const body = { request_type: type, notes };
+  if (vaccineName) body.vaccine_name = vaccineName;
+  if (quantity) body.quantity_needed = parseInt(quantity);
+
+  apiFetch('/vaccine-requests', { method: 'POST', body: JSON.stringify(body) }).then(res => {
+    if (!res?.success) { err.textContent = res?.message || 'Failed to submit.'; err.style.display='block'; return; }
+    alert('Request submitted!');
+    resetRequestForm();
+    loadedPanels.delete('requests');
+    loadRequests();
+  }).catch(() => { err.textContent = 'Could not reach server.'; err.style.display='block'; });
+}
+
+function loadRequests() {
+  apiFetch('/vaccine-requests').then(res => {
+    const tbody = document.getElementById('requests-table-body');
+    if (!res?.success) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:#94A3B8;">Failed to load.</td></tr>'; return; }
+
+    const isAdmin = currentUser.role === 'admin';
+    document.getElementById('requests-count').textContent = res.data.length + ' requests';
+
+    const formCard = document.getElementById('requests-nurse-form');
+    if (formCard) formCard.style.display = isAdmin ? 'none' : 'block';
+
+    document.getElementById('requests-desc').textContent = isAdmin
+      ? 'Manage all facility requests. Approve or reject as needed.'
+      : 'Submit and track requests for your facility.';
+
+    tbody.innerHTML = res.data.map(r => {
+      const badge = r.status === 'approved' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-amber';
+      const label = r.status === 'approved' ? '✓ Approved' : r.status === 'rejected' ? '✕ Rejected' : '⏳ Pending';
+      const typeIcon = r.request_type === 'new_vaccine' ? '🆕 New' : r.request_type === 'low_stock' ? '⚠️ Stock' : '📝 Other';
+      const adminActions = isAdmin && r.status === 'pending'
+        ? `<span style="display:flex;gap:4px;">
+            <button style="background:#D1FAE5;color:#065F46;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:500;" onclick="approveRequest(${r.request_id})">✓ Approve</button>
+            <button style="background:#FEE2E2;color:#991B1B;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:500;" onclick="rejectRequest(${r.request_id})">✕ Reject</button>
+           </span>`
+        : '<span style="color:#94A3B8;font-size:11px;">—</span>';
+
+      return `<tr>
+        <td>#${r.request_id}</td>
+        <td style="font-size:12px;">${esc(r.created_at)}</td>
+        <td><span class="badge badge-teal">${typeIcon}</span></td>
+        <td><strong>${esc(r.vaccine_name) || '—'}</strong></td>
+        <td>${r.quantity_needed ? r.quantity_needed + ' doses' : '—'}</td>
+        <td><span class="badge ${badge}">${label}</span></td>
+        <td style="font-size:12px;max-width:200px;white-space:normal;">${esc(r.admin_notes) || '—'}</td>
+        <td>${adminActions}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="8" style="text-align:center;padding:24px;color:#94A3B8;">No requests yet.</td></tr>';
+  });
+}
+
+function approveRequest(id) {
+  const notes = prompt('Admin notes (optional):');
+  apiFetch('/vaccine-requests/' + id, { method: 'PUT', body: JSON.stringify({ status: 'approved', admin_notes: notes || '' }) }).then(res => {
+    if (!res?.success) { alert(res?.message || 'Failed.'); return; }
+    alert('Request approved!');
+    loadedPanels.delete('requests');
+    loadRequests();
+  });
+}
+
+function rejectRequest(id) {
+  const notes = prompt('Reason for rejection:');
+  if (!notes) { alert('Please provide a reason.'); return; }
+  apiFetch('/vaccine-requests/' + id, { method: 'PUT', body: JSON.stringify({ status: 'rejected', admin_notes: notes }) }).then(res => {
+    if (!res?.success) { alert(res?.message || 'Failed.'); return; }
+    alert('Request rejected.');
+    loadedPanels.delete('requests');
+    loadRequests();
+  });
+}
+
+// ── Generic CRUD: Add / Edit / Delete (admin only) ──
+
+const ENTITY = {
+  vaccines: {
+    label: 'Vaccine',
+    icon: '💉',
+    idField: 'vaccine_id',
+    panel: 'vaccines',
+    fields: [
+      { name: 'vaccine_id',   label: 'Vaccine ID', type: 'number', lockOnEdit: true, required: true, placeholder: 'e.g. 6' },
+      { name: 'vaccine_name', label: 'Vaccine Name', type: 'text', required: true, placeholder: 'e.g. Cholera, Hepatitis B' },
+      { name: 'supplier_id',  label: 'Supplier', type: 'select', options: 'suppliers', optionLabel: 'supplier_name', optionValue: 'supplier_id', required: false },
+      { name: 'expiry_date',  label: 'Expiry Date', type: 'date', required: true, placeholder: 'e.g. 2027-12-31' },
+    ],
+  },
+  suppliers: {
+    label: 'Supplier',
+    icon: '🏭',
+    idField: 'supplier_id',
+    panel: 'suppliers',
+    fields: [
+      { name: 'supplier_id',   label: 'Supplier ID', type: 'number', lockOnEdit: true, required: true, placeholder: 'e.g. 1' },
+      { name: 'supplier_name', label: 'Supplier Name', type: 'text', required: true, placeholder: 'e.g. Pfizer, Moderna' },
+      { name: 'contact',       label: 'Contact', type: 'text', required: false, placeholder: 'e.g. supply@pfizer.com' },
+    ],
+  },
+  facilities: {
+    label: 'Facility',
+    icon: '🏥',
+    idField: 'facility_id',
+    panel: 'facilities',
+    fields: [
+      { name: 'facility_id',   label: 'Facility ID', type: 'number', lockOnEdit: true, required: true, placeholder: 'e.g. 1' },
+      { name: 'facility_name', label: 'Facility Name', type: 'text', required: true, placeholder: 'e.g. Community Health Center' },
+      { name: 'location_',     label: 'Location', type: 'text', required: false, placeholder: 'e.g. Jakarta, Indonesia' },
+    ],
+  },
+  distribution: {
+    label: 'Distribution',
+    icon: '🚚',
+    idField: 'distribution_id',
+    panel: 'distribution',
+    fields: [
+      { name: 'distribution_id',   label: 'Distribution ID', type: 'number', lockOnEdit: true, required: true, placeholder: 'e.g. 1' },
+      { name: 'vaccine_id',        label: 'Vaccine', type: 'select', options: 'vaccines', optionLabel: 'vaccine_name', optionValue: 'vaccine_id', required: true },
+      { name: 'facility_id',       label: 'Facility', type: 'select', options: 'facilities', optionLabel: 'facility_name', optionValue: 'facility_id', required: true },
+      { name: 'quantity',          label: 'Quantity', type: 'number', required: true, placeholder: 'e.g. 500' },
+      { name: 'distribution_date', label: 'Distribution Date', type: 'date', required: false, placeholder: 'e.g. 2025-07-28' },
+    ],
+  },
+  stock: {
+    label: 'Stock',
+    icon: '📦',
+    idField: 'stock_id',
+    panel: 'stock',
+    fields: [
+      { name: 'stock_id',    label: 'Stock ID', type: 'number', lockOnEdit: true, required: true, placeholder: 'e.g. 1' },
+      { name: 'facility_id', label: 'Facility', type: 'select', options: 'facilities', optionLabel: 'facility_name', optionValue: 'facility_id', required: true },
+      { name: 'vaccine_id',  label: 'Vaccine', type: 'select', options: 'vaccines', optionLabel: 'vaccine_name', optionValue: 'vaccine_id', required: true },
+      { name: 'quantity',    label: 'Quantity', type: 'number', required: true, placeholder: 'e.g. 1000' },
+    ],
+  },
+  users: {
+    label: 'User',
+    icon: '👤',
+    idField: 'user_id',
+    panel: 'admin',
+    fields: [
+      { name: 'user_id',     label: 'User ID', type: 'number', lockOnEdit: true, required: true, placeholder: 'e.g. 1' },
+      { name: 'username',    label: 'Username', type: 'text', lockOnEdit: true, required: true, placeholder: 'e.g. nurse_jaya' },
+      { name: 'password',    label: 'Password', type: 'text', required: false, placeholder: '' },
+      { name: 'role',        label: 'Role', type: 'select', options: ['admin', 'nurse'], lockOnEdit: true, required: true, placeholder: 'Select role' },
+      { name: 'full_name',   label: 'Full Name', type: 'text', required: false, placeholder: 'e.g. Jaya Wijaya' },
+      { name: 'facility_id', label: 'Facility', type: 'select', options: 'facilities', optionLabel: 'facility_name', optionValue: 'facility_id', required: false },
+    ],
+  },
+  stock_transfers: {
+    label: 'Stock Transfer',
+    icon: '🔄',
+    idField: 'transfer_id',
+    panel: 'transfers',
+    fields: [
+      { name: 'transfer_id',   label: 'Transfer ID', type: 'number', lockOnEdit: true, required: true, placeholder: 'e.g. 1' },
+      { name: 'vaccine_id',    label: 'Vaccine', type: 'select', options: 'vaccines', optionLabel: 'vaccine_name', optionValue: 'vaccine_id', required: true },
+      { name: 'from_facility_id', label: 'From Facility', type: 'select', options: 'facilities', optionLabel: 'facility_name', optionValue: 'facility_id', required: true },
+      { name: 'to_facility_id',   label: 'To Facility',   type: 'select', options: 'facilities', optionLabel: 'facility_name', optionValue: 'facility_id', required: true },
+      { name: 'quantity',      label: 'Quantity', type: 'number', required: true, placeholder: 'e.g. 200' },
+      { name: 'transfer_date', label: 'Transfer Date', type: 'date', required: false, placeholder: 'e.g. 2025-07-28' },
+      { name: 'notes',         label: 'Notes', type: 'text', required: false, placeholder: 'e.g. Emergency shipment' },
+    ],
+  },
+};
+
+let modalState = { entityKey: null, mode: 'create', id: null };
+
+function rowActions(entityKey, id, rowData) {
+  if (!currentUser || currentUser.role !== 'admin') return '—';
+  return `
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px;" onclick='openModal("${entityKey}", ${JSON.stringify(rowData)})'>Edit</button>
+      <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px;color:#ef4444;" onclick="deleteRecord('${entityKey}', ${id})">Delete</button>
+    </div>`;
+}
+
+async function openModal(entityKey, existing = null) {
+  const cfg = ENTITY[entityKey];
+  modalState = { entityKey, mode: existing ? 'edit' : 'create', id: existing ? existing[cfg.idField] : null };
+
+  // Update title and subtitle
+  document.getElementById('modal-title').textContent = (existing ? 'Edit ' : 'Add ') + cfg.label;
+  document.getElementById('modal-subtitle').textContent = existing
+    ? `Updating ${cfg.label} #${existing[cfg.idField]}`
+    : `Create a new ${cfg.label.toLowerCase()}`;
+  document.getElementById('modal-icon').textContent = cfg.icon || '📝';
+  document.getElementById('modal-error').style.display = 'none';
+
+  // Show modal with loading state
+  document.getElementById('modal-fields').innerHTML = '<p style="color:#94A3B8;font-size:13px;padding:20px;">Loading options…</p>';
+  const overlay = document.getElementById('modal-overlay');
+  const card = overlay.querySelector('.modal-card');
+  overlay.style.display = 'flex';
+  setTimeout(() => { overlay.style.opacity = '1'; card.style.transform = 'scale(1)'; }, 10);
+
+  // Fetch options for dynamic dropdowns in parallel
+  const dynamicOptions = {};
+  const fetchPromises = [];
+  for (const f of cfg.fields) {
+    if (f.type === 'select' && typeof f.options === 'string') {
+      fetchPromises.push(
+        apiFetch(`/${f.options}`)
+          .then(res => { if (res?.success && res?.data) dynamicOptions[f.name] = res.data; })
+          .catch(e => { console.error(`Failed to load ${f.options}:`, e); dynamicOptions[f.name] = []; })
+      );
+    }
+  }
+  await Promise.all(fetchPromises);
+
+  const fieldsHtml = cfg.fields.map(f => {
+    const val = existing ? (existing[f.name] ?? '') : '';
+    const disabled = (existing && f.lockOnEdit) ? 'disabled' : '';
+    const req = f.required ? 'required' : '';
+    const reqStar = f.required ? '<span class="req">*</span>' : '';
+    
+    // Hide only the primary ID field on create (it auto-increments), not foreign key dropdowns
+    const hidden = !existing && f.name === cfg.idField ? 'display:none;' : '';
+    
+    let input;
+    if (f.type === 'select') {
+      let options;
+      if (Array.isArray(f.options)) {
+        // Static options (like role: ['admin', 'nurse'])
+        options = f.options.map(o => 
+          `<option value="${o}" ${val === o ? 'selected' : ''}>${o.charAt(0).toUpperCase() + o.slice(1)}</option>`
+        ).join('');
+      } else {
+        // Dynamic options from API (like vaccines, facilities, suppliers)
+        const data = dynamicOptions[f.name] || [];
+        options = data.map(item => 
+          `<option value="${item[f.optionValue]}" ${val == item[f.optionValue] ? 'selected' : ''}>${item[f.optionLabel]}</option>`
+        ).join('');
+      }
+      input = `<select name="${f.name}" ${disabled} ${req} class="modal-input">
+        <option value="">Select…</option>
+        ${options}
+      </select>`;
+    } else {
+      input = `<input type="${f.type}" name="${f.name}" value="${esc(val)}" ${disabled} ${req}
+        placeholder="${f.placeholder || ''}" class="modal-input" />`;
+    }
+    return `
+      <div class="modal-field" style="${hidden}">
+        <label class="modal-label">${f.label} ${reqStar}</label>
+        ${input}
+      </div>`;
+  }).join('');
+
+  document.getElementById('modal-fields').innerHTML = fieldsHtml;
+
+  // Auto-focus first input
+  setTimeout(() => {
+    const firstInput = document.querySelector('#modal-fields .modal-input:not([disabled])');
+    if (firstInput) firstInput.focus();
+  }, 100);
+}
+
+function closeModal() {
+  const overlay = document.getElementById('modal-overlay');
+  const card = overlay.querySelector('.modal-card');
+  overlay.style.opacity = '0';
+  card.style.transform = 'scale(.95)';
+  setTimeout(() => { overlay.style.display = 'none'; }, 200);
+}
+
+function submitModal(e) {
+  e.preventDefault();
+  const cfg = ENTITY[modalState.entityKey];
+  const form = document.getElementById('modal-form');
+  const body = {};
+  cfg.fields.forEach(f => {
+    const el = form.elements[f.name];
+    if (!el) return;
+    let v = el.value.trim();
+    if (v === '' && f.type === 'number') v = null;
+    if (v !== '' && v !== null) body[f.name] = v;
+  });
+
+  const isEdit = modalState.mode === 'edit';
+  const url = isEdit ? `/${modalState.entityKey}/${modalState.id}` : `/${modalState.entityKey}`;
+  const method = isEdit ? 'PUT' : 'POST';
+
+  apiFetch(url, { method, body: JSON.stringify(body) }).then(res => {
+    const errEl = document.getElementById('modal-error');
+    if (!res?.success) {
+      errEl.textContent = res?.message || 'Something went wrong.';
+      errEl.style.display = 'block';
+      return;
+    }
+    closeModal();
+    refreshPanel(cfg.panel);
+  }).catch(() => {
+    const errEl = document.getElementById('modal-error');
+    errEl.textContent = 'Could not reach the server.';
+    errEl.style.display = 'block';
+  });
+}
+
+function deleteRecord(entityKey, id) {
+  const cfg = ENTITY[entityKey];
+  if (!confirm(`Delete this ${cfg.label.toLowerCase()}? This cannot be undone.`)) return;
+
+  apiFetch(`/${entityKey}/${id}`, { method: 'DELETE' }).then(res => {
+    if (!res?.success) {
+      alert(res?.message || 'Delete failed.');
+      return;
+    }
+    refreshPanel(cfg.panel);
+  });
+}
+
+/** Force a panel (and the dashboard counts) to reload fresh data on next view. */
+function refreshPanel(panelId) {
+  loadedPanels.delete(panelId);
+  loadPanelData(panelId);
+  loadDashboard();
+}
+
+
+
+// ── Expiry Chart ──
+let expiryChartInstance = null;
+
+// ── Audit Logs ──
+const ENTITY_ICONS = {
+  vaccine: '💉 Vaccine',
+  supplier: '🏭 Supplier',
+  facility: '🏥 Facility',
+  distribution: '🚚 Distribution',
+  stock: '📦 Stock',
+  user: '👤 User',
+  stock_transfer: '🔄 Stock Transfer',
+  stock_transfers: '🔄 Stock Transfer',
+  vaccine_request: '📋 Request',
+  vaccine_requests: '📋 Request',
+};
+
+const ACTION_COLORS = {
+  create: 'badge-green',
+  insert: 'badge-green',
+  update: 'badge-amber',
+  delete: 'badge-red',
+};
+
+// ── Stock Transfers ──
+// ── Mobile sidebar ──
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+// Allow Enter key on login
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') {
+    doLogin();
+  }
+});
+
+// On load: if a session cookie already exists (e.g. page refresh), restore it.
+checkSession();
+
+</script>
+</body>
+</html>
