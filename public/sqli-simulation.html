@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL Injection Simulation — SupplyVaksin</title>
+<style>
+  :root { --bg: #0B1120; --card: #162032; --border: #1E3A5F; --text: #E2E8F0; --muted: #64748B; --red: #EF4444; --green: #22C55E; --amber: #F59E0B; --teal: #14B8A6; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .container { max-width: 960px; margin: 0 auto; padding: 40px 24px; }
+  h1 { text-align: center; font-size: 28px; margin-bottom: 8px; }
+  .subtitle { text-align: center; color: var(--muted); margin-bottom: 40px; font-size: 14px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 28px; margin-bottom: 24px; }
+  .card h2 { font-size: 18px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .badge { font-size: 11px; padding: 3px 10px; border-radius: 8px; font-weight: 600; }
+  .badge-red { background: rgba(239,68,68,.15); color: var(--red); }
+  .badge-green { background: rgba(34,197,94,.15); color: var(--green); }
+  .badge-amber { background: rgba(245,158,11,.15); color: var(--amber); }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--muted); }
+  .field input, .field select {
+    width: 100%; padding: 10px 14px; background: #0F172A; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 14px; font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--teal); }
+  .btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; transition: .2s; }
+  .btn-red { background: var(--red); color: #fff; }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-amber { background: var(--amber); color: #000; }
+  .btn:hover { opacity: .85; transform: translateY(-1px); }
+  .result { margin-top: 16px; padding: 14px; border-radius: 8px; font-family: monospace; font-size: 13px; white-space: pre-wrap; word-break: break-all; line-height: 1.6; }
+  .result-leak { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: #FCA5A5; }
+  .result-safe { background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3); color: #86EFAC; }
+  .result-info { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.3); color: #FCD34D; }
+  .code-block { background: #0F172A; border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 12px 0; font-family: monospace; font-size: 12px; line-height: 1.7; overflow-x: auto; }
+  .code-vuln { border-left: 3px solid var(--red); }
+  .code-safe { border-left: 3px solid var(--green); }
+  .sql { color: #93C5FD; }
+  .kw { color: #C084FC; font-weight: 600; }
+  .str { color: #86EFAC; }
+  .cmt { color: var(--muted); font-style: italic; }
+  .danger { color: var(--red); font-weight: 700; }
+  .success { color: var(--green); font-weight: 700; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th { text-align: left; padding: 8px 12px; background: #0F172A; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+  td { padding: 8px 12px; border-bottom: 1px solid rgba(30,58,95,.3); }
+  .steps { counter-reset: step; list-style: none; }
+  .steps li { counter-increment: step; padding: 10px 0 10px 40px; position: relative; font-size: 14px; }
+  .steps li::before { content: counter(step); position: absolute; left: 0; top: 8px; width: 26px; height: 26px; background: var(--teal); color: #000; border-radius: 50%; font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+  .highlight { background: rgba(239,68,68,.15); padding: 2px 6px; border-radius: 4px; color: var(--red); font-family: monospace; font-size: 13px; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .tab { padding: 8px 16px; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-size: 13px; transition: .2s; }
+  .tab.active { background: var(--teal); color: #000; border-color: var(--teal); font-weight: 600; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🛡️ SQL Injection Simulation</h1>
+  <p class="subtitle">Educational demonstration — SupplyVaksin vaccine management system</p>
+
+  <!-- ═══ WHAT IS SQL INJECTION ═══ -->
+  <div class="card">
+    <h2>📖 What is SQL Injection?</h2>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:12px;">SQL Injection (SQLi) is an attack where malicious SQL code is inserted into input fields to manipulate the database query.</p>
+    
+    <div class="two-col">
+      <div>
+        <h3 style="color:var(--red);font-size:14px;margin-bottom:8px;">❌ Vulnerable Code</h3>
+        <div class="code-block code-vuln">
+<span class="cmt">// PHP - BAD: string concatenation</span>
+<span class="kw">$query</span> = <span class="str">"SELECT * FROM users WHERE 
+  username = '<span class="danger">' . $_POST['username'] . '</span>'"</span>;
+
+<span class="cmt">// If user types: admin' OR '1'='1</span>
+<span class="cmt">// Query becomes:</span>
+<span class="sql">SELECT * FROM users 
+  WHERE username = '<span class="danger">admin' OR '1'='1</span>'</span>
+<span class="cmt">// Result: returns ALL rows ❌</span>
+        </div>
+      </div>
+      <div>
+        <h3 style="color:var(--green);font-size:14px;margin-bottom:8px;">✅ Secure Code (Laravel)</h3>
+        <div class="code-block code-safe">
+<span class="cmt">// PHP Laravel - GOOD: prepared statement</span>
+<span class="kw">$user</span> = User::<span class="kw">where</span>(<span class="str">'username'</span>, <span class="str">$input</span>)-&gt;<span class="kw">first</span>();
+
+<span class="cmt">// Behind the scenes Laravel uses:</span>
+<span class="sql">SELECT * FROM users 
+  WHERE username = <span class="success">? </span><span class="cmt">-- parameterized</span></span>
+<span class="cmt">// Input is safely bound as data, NOT code</span>
+<span class="cmt">// Result: safe ✅</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SIMULATION ═══ -->
+  <div class="card">
+    <h2>🧪 Live Simulation</h2>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:16px;">Try entering SQL injection payloads below and see what happens.</p>
+
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('login')">1. Login Bypass</button>
+      <button class="tab" onclick="showTab('search')">2. Search Leak</button>
+      <button class="tab" onclick="showTab('delete')">3. Delete Attack</button>
+      <button class="tab" onclick="showTab('union')">4. UNION Attack</button>
+    </div>
+
+    <!-- Tab 1: Login Bypass -->
+    <div id="tab-login" class="tab-content">
+      <div class="field">
+        <label>Username Field (try injection)</label>
+        <input type="text" id="sqli-username" placeholder='e.g. admin' value=""/>
+      </div>
+      <div class="field">
+        <label>Password (anything works for this demo)</label>
+        <input type="password" id="sqli-password" placeholder="any password" value="anything"/>
+      </div>
+      <button class="btn btn-red" onclick="simLoginBypass()">Simulate Login Query</button>
+      <div id="result-login" class="result hidden"></div>
+    </div>
+
+    <!-- Tab 2: Search Leak -->
+    <div id="tab-search" class="tab-content hidden">
+      <div class="field">
+        <label>Search Vaccine (try injection)</label>
+        <input type="text" id="sqli-search" placeholder='e.g. Cholera'/>
+      </div>
+      <button class="btn btn-red" onclick="simSearchLeak()">Simulate Search Query</button>
+      <div id="result-search" class="result hidden"></div>
+    </div>
+
+    <!-- Tab 3: Delete Attack -->
+    <div id="tab-delete" class="tab-content hidden">
+      <div class="field">
+        <label>Vaccine ID to delete</label>
+        <input type="text" id="sqli-delete" placeholder='e.g. 1'/>
+      </div>
+      <button class="btn btn-red" onclick="simDeleteAttack()">Simulate Delete Query</button>
+      <div id="result-delete" class="result hidden"></div>
+    </div>
+
+    <!-- Tab 4: UNION Attack -->
+    <div id="tab-union" class="tab-content hidden">
+      <div class="field">
+        <label>Search query (try UNION SELECT)</label>
+        <input type="text" id="sqli-union" placeholder='e.g. Cholera'/>
+      </div>
+      <button class="btn btn-red" onclick="simUnionAttack()">Simulate UNION Query</button>
+      <div id="result-union" class="result hidden"></div>
+    </div>
+  </div>
+
+  <!-- ═══ COMMON PAYLOADS ═══ -->
+  <div class="card">
+    <h2>📝 Common SQL Injection Payloads</h2>
+    <table>
+      <tr><th>Payload</th><th>Attack Type</th><th>Effect</th></tr>
+      <tr><td><code class="highlight">admin' OR '1'='1</code></td><td>Login Bypass</td><td>Bypasses authentication, logs in as first user</td></tr>
+      <tr><td><code class="highlight">' OR ''='</code></td><td>Universal Bypass</td><td>Returns all rows from any query</td></tr>
+      <tr><td><code class="highlight">'; DROP TABLE users;--</code></td><td>Destructive</td><td>Deletes the entire users table (catastrophic!)</td></tr>
+      <tr><td><code class="highlight">' UNION SELECT username,password FROM users--</code></td><td>Data Exfiltration</td><td>Steals usernames and passwords from other tables</td></tr>
+      <tr><td><code class="highlight">1' AND (SELECT COUNT(*) FROM users)>0--</code></td><td>Blind SQLi</td><td>Leaks info by true/false responses</td></tr>
+      <tr><td><code class="highlight">' UNION SELECT null,table_name FROM information_schema.tables--</code></td><td>Schema Discovery</td><td>Reveals all table names in the database</td></tr>
+    </table>
+  </div>
+
+  <!-- ═══ HOW SUPPLYVAKSIN PROTECTS ═══ -->
+  <div class="card">
+    <h2>🛡️ How SupplyVaksin Is Protected</h2>
+    <ol class="steps">
+      <li><strong>Laravel Eloquent ORM</strong> — All queries use parameterized statements automatically. <code>User::where('username', $input)</code> binds <code>$input</code> as data, never as SQL code.</li>
+      <li><strong>Input Validation</strong> — Controllers use <code>$this->requireFields()</code> and type checking. Invalid input is rejected before reaching the database.</li>
+      <li><strong>Role-Based Access Control (RBAC)</strong> — Middleware checks authentication and authorization on every endpoint. Nurses can't access admin endpoints.</li>
+      <li><strong>CHECK Constraints</strong> — Database-level constraints like <code>users_role_check</code> ensure only valid values are stored, preventing injection payloads from persisting.</li>
+      <li><strong>Session Security</strong> — Session IDs are random strings. Session data is stored server-side in PostgreSQL, not in cookies.</li>
+    </ol>
+
+    <div class="code-block code-safe" style="margin-top:16px;">
+<span class="cmt">// Example: SupplyVaksin's AuthController — SAFE login</span>
+<span class="kw">$user</span> = User::with('facility')
+    -><span class="kw">where</span>(<span class="str">'username'</span>, <span class="str">$username</span>)  <span class="cmt">// ← parameterized</span>
+    -><span class="kw">first</span>();
+
+<span class="kw">if</span> (!$user || <span class="str">$password</span> !== <span class="str">$user</span>->password) {
+    <span class="kw">return</span> <span class="kw">$this</span>->fail(<span class="str">'Invalid username or password.'</span>, 401);
+}
+
+<span class="cmt">// Even if attacker sends: admin' OR '1'='1</span>
+<span class="cmt">// Laravel safely treats it as a literal string</span>
+<span class="cmt">// Query becomes: WHERE username = "admin' OR '1'='1"</span>
+<span class="cmt">// No matching user → login fails → attack blocked ✅</span>
+    </div>
+  </div>
+
+  <!-- ═══ ATTACK FLOW ═══ -->
+  <div class="card">
+    <h2>⚡ Attack Flow Diagram</h2>
+    <div style="font-family:monospace;font-size:13px;line-height:1.8;text-align:center;padding:20px;">
+      <span style="color:var(--red);">Attacker</span> → inputs <span class="highlight">admin' OR '1'='1</span><br>
+      ↓<br>
+      <span style="color:var(--amber);">Web Form</span> → passes to controller<br>
+      ↓<br>
+      <span style="color:var(--muted);">Vulnerable app:</span> <code style="color:var(--red);">"SELECT * FROM users WHERE username='$input'"</code><br>
+      <span style="color:var(--muted);">SupplyVaksin:</span> <code style="color:var(--green);">User::where('username', $input)->first()</code><br>
+      ↓<br>
+      <span style="color:var(--red);">Vulnerable:</span> Query becomes → <span class="danger">WHERE username='admin' OR '1'='1'</span> → ALL users returned ❌<br>
+      <span style="color:var(--green);">SupplyVaksin:</span> Query stays → <span class="success">WHERE username='admin' OR ''1''=''1'</span> → no match → rejected ✅<br>
+      ↓<br>
+      <span style="color:var(--green);">🛡️ Result: Attack blocked at database level</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ SIMULATION ENGINE ═══
+
+const FAKE_USERS = [
+  { id:1, username:'admin', password:'admin123', role:'admin', email:'sarah.chen@vaxtrack.gov', full_name:'Dr. Sarah Chen' },
+  { id:2, username:'superadm', password:'super456', role:'admin', email:'james.okafor@vaxtrack.gov', full_name:'James Okafor' },
+  { id:3, username:'nurse', password:'nurse123', role:'nurse', email:'maria.gonzalez@sabin.org', full_name:'Maria Gonzalez' },
+  { id:4, username:'nurseny', password:'nurse789', role:'nurse', email:'emily.thompson@nasn.org', full_name:'Emily Thompson' },
+];
+
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+  document.getElementById('tab-' + name).classList.remove('hidden');
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+// ═══ 1. LOGIN BYPASS ═══
+function simLoginBypass() {
+  const input = document.getElementById('sqli-username').value.trim();
+  const el = document.getElementById('result-login');
+  el.classList.remove('hidden');
+
+  const isSQLi = input.includes("'") || input.includes('"') || input.includes("OR") || input.includes("--") || input.includes(";");
+
+  // VULNERABLE: string concatenation
+  const vulnQuery = `SELECT * FROM users WHERE username = '${input}'`;
+  
+  // If injection detected, simulate returning ALL users
+  let vulnResult = '';
+  if (isSQLi) {
+    vulnResult = `❌ VULNERABLE QUERY:\n${vulnQuery}\n\n⚠️ SQL INJECTION DETECTED!\n\nThe OR condition made the WHERE clause always TRUE:\n→ Returned ALL ${FAKE_USERS.length} users from the database:\n`;
+    FAKE_USERS.forEach(u => {
+      vulnResult += `\n  👤 ${u.username} | ${u.role} | ${u.email} | pw: ${u.password}`;
+    });
+    vulnResult += `\n\n🚨 ATTACK SUCCESSFUL: Attacker is now logged in as "${FAKE_USERS[0].username}"`;
+  } else {
+    vulnResult = `❌ VULNERABLE QUERY:\n${vulnQuery}\n\nNo injection detected with this input.\nTry: admin' OR '1'='1`;
+  }
+
+  // SAFE: parameterized
+  const safeQuery = `SELECT * FROM users WHERE username = ?`;
+  const safeResult = `\n\n✅ SAFE QUERY (SupplyVaksin):\n${safeQuery}\n→ Binding: ["${input}"]\n→ Result: ${FAKE_USERS.find(u=>u.username===input) ? '1 user found (safe)' : '0 users found (safe)'}`;
+
+  el.innerHTML = vulnResult + safeResult;
+  el.className = 'result ' + (isSQLi ? 'result-leak' : 'result-safe');
+}
+
+// ═══ 2. SEARCH LEAK ═══
+function simSearchLeak() {
+  const input = document.getElementById('sqli-search').value.trim();
+  const el = document.getElementById('result-search');
+  el.classList.remove('hidden');
+
+  const isSQLi = input.includes("'") || input.includes('"') || input.includes("OR") || input.includes("--") || input.includes("UNION");
+
+  const vulnQuery = `SELECT * FROM vaccines WHERE vaccine_name LIKE '%${input}%'`;
+  let vulnResult = `❌ VULNERABLE QUERY:\n${vulnQuery}\n`;
+
+  if (isSQLi) {
+    vulnResult += `\n⚠️ SQL INJECTION DETECTED!\n\n💉 Vaccines table: 5 records exposed`;
+    vulnResult += `\n👤 Users table credentials leaked:\n`;
+    FAKE_USERS.forEach(u => {
+      vulnResult += `   ${u.username}: ${u.password} (${u.email})\n`;
+    });
+    vulnResult += `\n🚨 All sensitive data extracted!`;
+  } else {
+    vulnResult += `\nNo injection detected. Try: ' OR '1'='1`;
+  }
+
+  const safeQuery = `SELECT * FROM vaccines WHERE vaccine_name LIKE ?`;
+  const safeResult = `\n\n✅ SAFE QUERY (SupplyVaksin):\n${safeQuery}\n→ Binding: ["%${input}%"]\n→ Result: ${isSQLi ? '0 results (injection treated as literal string)' : '1-2 results (safe)'}`;
+
+  el.innerHTML = vulnResult + safeResult;
+  el.className = 'result ' + (isSQLi ? 'result-leak' : 'result-safe');
+}
+
+// ═══ 3. DELETE ATTACK ═══
+function simDeleteAttack() {
+  const input = document.getElementById('sqli-delete').value.trim();
+  const el = document.getElementById('result-delete');
+  el.classList.remove('hidden');
+
+  const isSQLi = input.includes("'") || input.includes('"') || input.includes(";") || input.includes("--") || input.includes("OR");
+
+  const vulnQuery = `DELETE FROM vaccines WHERE vaccine_id = ${input}`;
+  let vulnResult = `❌ VULNERABLE QUERY:\n${vulnQuery}\n`;
+
+  if (isSQLi) {
+    const hasDrop = input.toUpperCase().includes("DROP");
+    const hasDelete = input.toUpperCase().includes("DELETE") || input.toUpperCase().includes("--");
+    if (hasDrop) {
+      vulnResult += `\n🚨 CATASTROPHIC!\n\nAttacker input contains DROP TABLE:\n→ ${input}\n→ Executes: ${vulnQuery}\n→ AND: DROP TABLE vaccines;--\n→ ALL VACCINE DATA PERMANENTLY DELETED!\n→ ALL STOCK DATA PERMANENTLY DELETED!\n→ ALL DISTRIBUTION DATA PERMANENTLY DELETED!`;
+    } else {
+      vulnResult += `\n⚠️ SQL INJECTION DETECTED!\n\nAttacker input: ${input}\n→ WHERE clause bypassed!\n→ ALL 5 vaccines deleted instead of just 1!`;
+    }
+  } else {
+    vulnResult += `\nNo injection detected. Try: 1; DROP TABLE vaccines--`;
+  }
+
+  const safeQuery = `DELETE FROM vaccines WHERE vaccine_id = ?`;
+  const safeResult = `\n\n✅ SAFE QUERY (SupplyVaksin):\n${safeQuery}\n→ Binding: ["${input}"]\n→ Result: ${isSQLi ? '0 rows deleted (invalid ID, injection blocked)' : '1 row deleted (safe)'}`;
+
+  el.innerHTML = vulnResult + safeResult;
+  el.className = 'result ' + (isSQLi ? 'result-leak' : 'result-safe');
+}
+
+// ═══ 4. UNION ATTACK ═══
+function simUnionAttack() {
+  const input = document.getElementById('sqli-union').value.trim();
+  const el = document.getElementById('result-union');
+  el.classList.remove('hidden');
+
+  const isSQLi = input.toUpperCase().includes("UNION") || input.toUpperCase().includes("SELECT");
+
+  const vulnQuery = `SELECT vaccine_name, expiry_date FROM vaccines WHERE vaccine_name LIKE '%${input}%'`;
+  let vulnResult = `❌ VULNERABLE QUERY:\n${vulnQuery}\n`;
+
+  if (isSQLi) {
+    vulnResult += `\n⚠️ UNION SQL INJECTION DETECTED!\n\nThe attacker appended a UNION SELECT to combine results:\n\n`;
+    vulnResult += `💉 Original columns: vaccine_name, expiry_date\n`;
+    vulnResult += `👤 Stolen columns:   username, password\n\n`;
+    vulnResult += `┌──────────────┬──────────────┐\n`;
+    vulnResult += `│ username     │ password     │\n`;
+    vulnResult += `├──────────────┼──────────────┤\n`;
+    FAKE_USERS.forEach(u => {
+      vulnResult += `│ ${u.username.padEnd(12)} │ ${u.password.padEnd(12)} │\n`;
+    });
+    vulnResult += `└──────────────┴──────────────┘\n\n`;
+    vulnResult += `🚨 CRITICAL: User credentials from ALL tables leaked!`;
+  } else {
+    vulnResult += `\nNo UNION detected. Try: ' UNION SELECT username,password FROM users--`;
+  }
+
+  const safeQuery = `SELECT vaccine_name, expiry_date FROM vaccines WHERE vaccine_name LIKE ?`;
+  const safeResult = `\n\n✅ SAFE QUERY (SupplyVaksin):\n${safeQuery}\n→ Binding: ["%${input}%"]\n→ Result: ${isSQLi ? '0 results (injection payload treated as literal search string)' : '1-2 results (safe)'}`;
+
+  el.innerHTML = vulnResult + safeResult;
+  el.className = 'result ' + (isSQLi ? 'result-leak' : 'result-safe');
+}
+
+// Init
+showTab('login');
+document.querySelectorAll('.tab')[0].classList.add('active');
+</script>
+</body>
+</html>

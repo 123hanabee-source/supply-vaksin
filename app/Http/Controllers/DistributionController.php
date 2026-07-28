@@ -46,10 +46,11 @@ class DistributionController extends BaseController
     public function store(Request $request)
     {
         if ($err = $this->requireAdminOrFail()) return $err;
-        if ($err = $this->requireFields($request, ['distribution_id', 'vaccine_id', 'facility_id', 'quantity'])) return $err;
+        if ($err = $this->requireFields($request, ['vaccine_id', 'facility_id', 'quantity'])) return $err;
 
+        $distId = $request->input('distribution_id') ?? (Distribution::max('distribution_id') ?? 0) + 1;
         Distribution::create([
-            'distribution_id'   => $request->input('distribution_id'),
+            'distribution_id'   => $distId,
             'vaccine_id'        => $request->input('vaccine_id'),
             'facility_id'       => $request->input('facility_id'),
             'quantity'          => $request->input('quantity'),

@@ -45,10 +45,11 @@ class StockController extends BaseController
     public function store(Request $request)
     {
         if ($err = $this->requireAdminOrFail()) return $err;
-        if ($err = $this->requireFields($request, ['stock_id', 'facility_id', 'vaccine_id', 'quantity'])) return $err;
+        if ($err = $this->requireFields($request, ['facility_id', 'vaccine_id', 'quantity'])) return $err;
 
+        $stockId = $request->input('stock_id') ?? (Stock::max('stock_id') ?? 0) + 1;
         Stock::updateOrCreate(
-            ['stock_id' => $request->input('stock_id')],
+            ['stock_id' => $stockId],
             [
                 'facility_id' => $request->input('facility_id'),
                 'vaccine_id'  => $request->input('vaccine_id'),

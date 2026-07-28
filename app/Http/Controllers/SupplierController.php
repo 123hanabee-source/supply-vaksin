@@ -29,11 +29,12 @@ class SupplierController extends BaseController
     public function store(Request $request)
     {
         if ($err = $this->requireAdminOrFail()) return $err;
-        if ($err = $this->requireFields($request, ['supplier_id', 'supplier_name'])) return $err;
+        if ($err = $this->requireFields($request, ['supplier_name'])) return $err;
 
+        $supplierId = $request->input('supplier_id') ?? (Supplier::max('supplier_id') ?? 0) + 1;
         try {
             Supplier::create([
-                'supplier_id'   => $request->input('supplier_id'),
+                'supplier_id' => $supplierId,
                 'supplier_name' => $request->input('supplier_name'),
                 'contact'       => $request->input('contact', ''),
             ]);

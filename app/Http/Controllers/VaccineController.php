@@ -48,11 +48,12 @@ class VaccineController extends BaseController
     public function store(Request $request)
     {
         if ($err = $this->requireAdminOrFail()) return $err;
-        if ($err = $this->requireFields($request, ['vaccine_id', 'vaccine_name', 'expiry_date'])) return $err;
+        if ($err = $this->requireFields($request, ['vaccine_name', 'expiry_date'])) return $err;
 
+        $vaccineId = $request->input('vaccine_id') ?? (Vaccine::max('vaccine_id') ?? 0) + 1;
         try {
             Vaccine::create([
-                'vaccine_id'   => $request->input('vaccine_id'),
+                'vaccine_id'   => $vaccineId,
                 'supplier_id'  => $request->input('supplier_id'),
                 'vaccine_name' => $request->input('vaccine_name'),
                 'expiry_date'  => $request->input('expiry_date'),

@@ -60,15 +60,16 @@ class UserController extends BaseController
     public function store(Request $request)
     {
         if ($err = $this->requireAdminOrFail()) return $err;
-        if ($err = $this->requireFields($request, ['user_id', 'username', 'password', 'role'])) return $err;
+        if ($err = $this->requireFields($request, ['username', 'password', 'role'])) return $err;
 
+        $userId = $request->input('user_id') ?? (User::max('user_id') ?? 0) + 1;
         $role = $request->input('role');
         if (!in_array($role, ['admin', 'nurse'])) {
             return $this->fail("Role must be 'admin' or 'nurse'.", 400);
         }
 
         User::create([
-            'user_id'     => $request->input('user_id'),
+            'user_id'     => $userId,
             'username'    => $request->input('username'),
             // NOTE: plaintext to match the demo schema — use Hash::make() in production.
             'password'    => $request->input('password'),

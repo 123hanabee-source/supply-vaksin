@@ -32,11 +32,12 @@ class FacilityController extends BaseController
     public function store(Request $request)
     {
         if ($err = $this->requireAdminOrFail()) return $err;
-        if ($err = $this->requireFields($request, ['facility_id', 'facility_name'])) return $err;
+        if ($err = $this->requireFields($request, ['facility_name'])) return $err;
 
+        $facilityId = $request->input('facility_id') ?? (Facility::max('facility_id') ?? 0) + 1;
         try {
             Facility::create([
-                'facility_id'   => $request->input('facility_id'),
+                'facility_id' => $facilityId,
                 'facility_name' => $request->input('facility_name'),
                 'location_'     => $request->input('location_', ''),
             ]);

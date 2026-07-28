@@ -1850,8 +1850,11 @@ async function openModal(entityKey, existing = null) {
     const req = f.required ? 'required' : '';
     const reqStar = f.required ? '<span class="req">*</span>' : '';
     
-    // Hide only the primary ID field on create (it auto-increments), not foreign key dropdowns
-    const hidden = !existing && f.name === cfg.idField ? 'display:none;' : '';
+    // Hide primary ID on create (auto-generates), don't require it
+    const isHidden = !existing && f.name === cfg.idField;
+    const hidden = isHidden ? 'display:none;' : '';
+    const req = (f.required && !isHidden) ? 'required' : '';
+    const reqStar = (f.required && !isHidden) ? '<span class="req">*</span>' : '';
     
     let input;
     if (f.type === 'select') {
@@ -1912,6 +1915,19 @@ function submitModal(e) {
     if (v === '' && f.type === 'number') v = null;
     if (v !== '' && v !== null) body[f.name] = v;
   });
+
+  // Auto-generate next ID for create mode
+  if (modalState.mode === 'create' && !body[cfg.idField]) {
+    const existingRows = document.querySelectorAll(`#panel-${cfg.panel} tbody tr`);
+    let maxId = 0;
+    existingRows.forEach(row => {
+      const text = row.textContent;
+      // Extract the first number found as the ID
+      const match = text.match(/\d+/);
+      if (match) maxId = Math.max(maxId, parseInt(match[0]));
+    });
+    body[cfg.idField] = maxId + 1;
+  }
 
   const isEdit = modalState.mode === 'edit';
   const url = isEdit ? `/${modalState.entityKey}/${modalState.id}` : `/${modalState.entityKey}`;
