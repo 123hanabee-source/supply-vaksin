@@ -77,7 +77,8 @@ class UserController extends BaseController
             'full_name'   => $request->input('full_name', ''),
             'facility_id' => $role === 'nurse' ? $request->input('facility_id') : null,
         ]);
-        return $this->ok(null, 'User created.');
+        AuditLog::log('create', 'users', $userId, 'Created users #' . $userId);
+            return $this->ok(null, 'User created.');
     }
 
     /**
@@ -97,7 +98,8 @@ class UserController extends BaseController
                 'facility_id' => $request->input('facility_id', $user->facility_id),
                 'password'    => $request->input('password', $user->password),
             ]);
-            return $this->ok(null, 'User updated.');
+            AuditLog::log('update', 'users', $id, 'Updated users #' . $id);
+        return $this->ok(null, 'User updated.');
         }
 
         // Client path — own record only, full_name/password only.

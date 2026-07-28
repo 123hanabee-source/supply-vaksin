@@ -38,6 +38,7 @@ class SupplierController extends BaseController
                 'supplier_name' => $request->input('supplier_name'),
                 'contact'       => $request->input('contact', ''),
             ]);
+            AuditLog::log('create', 'suppliers', $supplierId, 'Created suppliers #' . $supplierId);
             return $this->ok(null, 'Supplier added.');
         } catch (QueryException $e) {
             return $this->fail($e->getMessage(), 500);
@@ -56,6 +57,7 @@ class SupplierController extends BaseController
             'supplier_name' => $request->input('supplier_name'),
             'contact'       => $request->input('contact', ''),
         ]);
+        AuditLog::log('update', 'suppliers', $id, 'Updated suppliers #' . $id);
         return $this->ok(null, 'Supplier updated.');
     }
 

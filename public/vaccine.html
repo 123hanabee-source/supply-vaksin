@@ -1939,7 +1939,12 @@ function submitModal(e) {
       return;
     }
     closeModal();
-    refreshPanel(cfg.panel);
+    // Force reload the panel by clearing cache and reloading after a brief delay
+    loadedPanels.delete(cfg.panel);
+    setTimeout(() => {
+      loadPanelData(cfg.panel);
+      loadDashboard();
+    }, 300);
   }).catch(() => {
     const errEl = document.getElementById('modal-error');
     errEl.textContent = 'Could not reach the server.';

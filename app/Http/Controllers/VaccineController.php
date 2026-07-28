@@ -58,6 +58,7 @@ class VaccineController extends BaseController
                 'vaccine_name' => $request->input('vaccine_name'),
                 'expiry_date'  => $request->input('expiry_date'),
             ]);
+            AuditLog::log('create', 'vaccines', $vaccineId, 'Created vaccines #' . $vaccineId);
             return $this->ok(null, 'Vaccine added.');
         } catch (QueryException $e) {
             return $this->fail($e->getMessage(), 500);
@@ -77,6 +78,7 @@ class VaccineController extends BaseController
             'expiry_date'  => $request->input('expiry_date'),
             'supplier_id'  => $request->input('supplier_id'),
         ]);
+        AuditLog::log('update', 'vaccines', $id, 'Updated vaccines #' . $id);
         return $this->ok(null, 'Vaccine updated.');
     }
 

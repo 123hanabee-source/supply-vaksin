@@ -56,7 +56,8 @@ class DistributionController extends BaseController
             'quantity'          => $request->input('quantity'),
             'distribution_date' => $request->input('distribution_date', now()->toDateString()),
         ]);
-        return $this->ok(null, 'Distribution recorded.');
+        AuditLog::log('create', 'distribution', $distId, 'Created distribution #' . $distId);
+            return $this->ok(null, 'Distribution recorded.');
     }
 
     public function update(Request $request, $id)
@@ -73,6 +74,7 @@ class DistributionController extends BaseController
             'vaccine_id'        => $request->input('vaccine_id', $row->vaccine_id),
             'facility_id'       => $request->input('facility_id', $row->facility_id),
         ]);
+        AuditLog::log('update', 'distribution', $id, 'Updated distribution #' . $id);
         return $this->ok(null, 'Distribution updated.');
     }
 

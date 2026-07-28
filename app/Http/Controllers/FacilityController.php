@@ -41,6 +41,7 @@ class FacilityController extends BaseController
                 'facility_name' => $request->input('facility_name'),
                 'location_'     => $request->input('location_', ''),
             ]);
+            AuditLog::log('create', 'facilities', $facilityId, 'Created facilities #' . $facilityId);
             return $this->ok(null, 'Facility added.');
         } catch (QueryException $e) {
             return $this->fail($e->getMessage(), 500);
@@ -59,6 +60,7 @@ class FacilityController extends BaseController
             'facility_name' => $request->input('facility_name'),
             'location_'     => $request->input('location_', ''),
         ]);
+        AuditLog::log('update', 'facilities', $id, 'Updated facilities #' . $id);
         return $this->ok(null, 'Facility updated.');
     }
 
