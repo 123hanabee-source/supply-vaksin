@@ -32,13 +32,13 @@ abstract class BaseController extends Controller
         return session('role') === 'admin';
     }
 
-    /** True if the current session belongs to a client. */
-    protected function isClient(): bool
+    /** True if the current session belongs to a nurse. */
+    protected function isNurse(): bool
     {
-        return session('role') === 'client';
+        return session('role') === 'nurse';
     }
 
-    /** The logged-in client's facility_id, or null. */
+    /** The logged-in nurse's facility_id, or null. */
     protected function sessionFacilityId(): ?int
     {
         return session('facility_id');

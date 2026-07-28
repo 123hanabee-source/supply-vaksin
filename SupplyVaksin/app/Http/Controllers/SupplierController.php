@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
@@ -66,7 +67,8 @@ class SupplierController extends BaseController
 
         try {
             $supplier->delete();
-            return $this->ok(null, 'Supplier deleted.');
+            AuditLog::log('delete', 'suppliers', $id, "Deleted supplier #{$id}");
+        return $this->ok(null, 'Supplier deleted.');
         } catch (QueryException $e) {
             return $this->fail('Cannot delete: supplier is referenced by one or more vaccines.', 409);
         }

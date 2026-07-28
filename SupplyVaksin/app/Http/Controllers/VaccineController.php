@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Vaccine;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
@@ -87,7 +88,8 @@ class VaccineController extends BaseController
 
         try {
             $vaccine->delete();
-            return $this->ok(null, 'Vaccine deleted.');
+            AuditLog::log('delete', 'vaccines', $id, "Deleted vaccine #{$id}");
+        return $this->ok(null, 'Vaccine deleted.');
         } catch (QueryException $e) {
             return $this->fail('Cannot delete: vaccine is referenced in distribution or stock records.', 409);
         }

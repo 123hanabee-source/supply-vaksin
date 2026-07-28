@@ -1,11 +1,12 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>VaxTrack — Vaccine Distribution Management</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<style>
+  <style>
   :root {
     --navy:      #0A1628;
     --navy-mid:  #112240;
@@ -435,12 +436,107 @@
   }
   .btn:hover { opacity: .88; transform: translateY(-1px); }
   .btn-primary { background: var(--teal); color: var(--white); }
+  .btn-secondary { background: #F1F5F9; color: var(--navy); }
   .btn-ghost {
     background: none;
     border: 1px solid var(--border);
     color: var(--slate);
   }
   .btn-ghost:hover { border-color: var(--teal); color: var(--teal); }
+
+  /* ── PROFESSIONAL CRUD MODAL ── */
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    background: #F8FAFC;
+  }
+  .modal-header-left { display: flex; align-items: center; gap: 12px; }
+  .modal-icon {
+    width: 40px; height: 40px;
+    background: var(--teal);
+    border-radius: 10px;
+    display: grid; place-items: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .modal-title {
+    margin: 0;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--navy);
+  }
+  .modal-subtitle {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: var(--slate);
+  }
+  .modal-close {
+    width: 32px; height: 32px;
+    background: rgba(0,0,0,.04);
+    border: none;
+    border-radius: 8px;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--slate);
+    cursor: pointer;
+    transition: all .15s;
+    display: grid; place-items: center;
+  }
+  .modal-close:hover { background: rgba(0,0,0,.08); color: var(--navy); }
+  .modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .modal-field { margin-bottom: 18px; }
+  .modal-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--navy);
+    margin-bottom: 6px;
+  }
+  .modal-label .req { color: var(--red); margin-left: 2px; }
+  .modal-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    color: var(--navy);
+    background: var(--white);
+    transition: border-color .18s, box-shadow .18s;
+    outline: none;
+  }
+  .modal-input::placeholder { color: #94A3B8; }
+  .modal-input:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(13,148,136,.12);
+  }
+  .modal-input:disabled {
+    background: #F8FAFC;
+    color: var(--slate);
+    cursor: not-allowed;
+  }
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    background: #F8FAFC;
+    justify-content: flex-end;
+  }
+  .modal-footer .btn {
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+  }
 
   /* Expiry status */
   .expiry-ok { color: var(--green); font-size: 12px; }
@@ -518,6 +614,7 @@
   .empty { text-align: center; padding: 40px; color: var(--slate-lt); font-size: 13px; }
   .empty .emoji { font-size: 32px; margin-bottom: 8px; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 </head>
 <body>
 
@@ -538,19 +635,11 @@
       <label>Password</label>
       <input type="password" id="password" placeholder="Enter password"/>
     </div>
-    <div class="field">
-      <label>Role</label>
-      <select id="role">
-        <option value="">Select role…</option>
-        <option value="admin">Admin</option>
-        <option value="client">Client</option>
-      </select>
-    </div>
     <button class="login-btn" onclick="doLogin()">Sign In</button>
     <div class="login-error" id="login-error">⚠ Invalid credentials. Please check and try again.</div>
 
     <div class="login-hint">
-      Demo — Admin: <strong>admin / admin123</strong> &nbsp;|&nbsp; Client: <strong>client / client123</strong>
+      Admin: <strong>admin / admin123</strong> &nbsp;|&nbsp; Nurse: <strong>nurseny</strong> / <strong>nurse789</strong><br><span style="font-size:11px;opacity:.6;">Role auto-detected.</span>
     </div>
   </div>
 </div>
@@ -627,28 +716,16 @@
         </div>
 
         <div class="two-col">
-          <!-- Vaccine expiry status -->
+          <!-- Vaccine expiry chart -->
           <div class="card">
             <div class="card-header">
               <div>
-                <h4>Vaccine Expiry Status</h4>
-                <p>All vaccine lots with urgency indicators</p>
+                <h4>Vaccine Expiry Timeline</h4>
+                <p>Days until expiry by vaccine — red &lt;30d, orange &lt;90d, green &gt;90d</p>
               </div>
             </div>
-            <div class="card-body">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Vaccine</th>
-                    <th>Supplier</th>
-                    <th>Expiry</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody id="dash-vaccine-table-body">
-                  <tr><td colspan="4" style="text-align:center;color:var(--slate);">Loading…</td></tr>
-                </tbody>
-              </table>
+            <div class="card-body" style="padding:20px;position:relative;height:320px;">
+              <div id="expiry-chart" style="display:flex;flex-direction:column;gap:12px;"></div>
             </div>
           </div>
 
@@ -866,11 +943,9 @@
           <div class="card">
             <div class="card-header"><div><h4>Quick Actions</h4></div></div>
             <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
-              <button class="btn btn-primary" style="justify-content:flex-start;">💉 Add New Vaccine</button>
-              <button class="btn btn-primary" style="justify-content:flex-start;">🏭 Register Supplier</button>
-              <button class="btn btn-primary" style="justify-content:flex-start;">🏥 Add Facility</button>
-              <button class="btn btn-ghost" style="justify-content:flex-start;">📊 Export Reports</button>
-              <button class="btn btn-ghost" style="justify-content:flex-start;">🗑 Purge Expired Records</button>
+              <button class="btn btn-primary" style="justify-content:flex-start;" onclick="openModal('vaccines')">💉 Add New Vaccine</button>
+              <button class="btn btn-primary" style="justify-content:flex-start;" onclick="openModal('suppliers')">🏭 Register Supplier</button>
+              <button class="btn btn-primary" style="justify-content:flex-start;" onclick="openModal('facilities')">🏥 Add Facility</button>
             </div>
           </div>
         </div>
@@ -931,20 +1006,132 @@
         </div>
       </div>
 
+      <!-- ── REQUESTS (nurse + admin) ── -->
+      <div class="panel" id="panel-requests">
+        <div class="page-title">Vaccine Requests</div>
+        <div class="page-desc" id="requests-desc">Submit and track requests for your facility.</div>
+
+        <div class="card" id="requests-nurse-form">
+          <div class="card-header">
+            <div><h4>📋 New Request</h4><p>Submit a request to admin</p></div>
+          </div>
+          <div class="card-body" style="padding:20px;">
+            <form onsubmit="submitRequest(event)" style="display:flex;flex-direction:column;gap:14px;">
+              <div class="modal-field">
+                <label>Request Type <span class="req">*</span></label>
+                <select id="req-type" required>
+                  <option value="">Select type…</option>
+                  <option value="new_vaccine">🆕 New Vaccine Needed</option>
+                  <option value="low_stock">⚠️ Low Stock / Restock</option>
+                  <option value="other">📝 Other Request</option>
+                </select>
+              </div>
+              <div class="modal-field" id="req-vaccine-field" style="display:none;">
+                <label>Vaccine Name <span class="req">*</span></label>
+                <input type="text" id="req-vaccine-name" placeholder="e.g. HPV Vaccine (Gardasil)">
+              </div>
+              <div class="modal-field" id="req-qty-field" style="display:none;">
+                <label>Quantity Needed</label>
+                <input type="number" id="req-quantity" placeholder="e.g. 500 doses">
+              </div>
+              <div class="modal-field">
+                <label>Notes / Justification</label>
+                <textarea id="req-notes" rows="3" placeholder="Explain why this is needed…" style="resize:vertical;"></textarea>
+              </div>
+              <div style="display:flex;gap:10px;">
+                <button type="submit" class="btn btn-primary" style="font-weight:500;">📤 Submit Request</button>
+                <button type="reset" class="btn btn-ghost" onclick="resetRequestForm()">Clear</button>
+              </div>
+              <div id="req-error" style="display:none;background:#FEE2E2;color:#991B1B;border-radius:8px;padding:10px 14px;font-size:13px;"></div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><h4>Request History</h4><p id="requests-count">Track your requests</p></div>
+            <button class="btn-export" onclick="exportCSV('vaccine-requests')">📥 CSV</button>
+          </div>
+          <div class="card-body">
+            <table>
+              <thead><tr><th>ID</th><th>Date</th><th>Type</th><th>Vaccine</th><th>Qty</th><th>Status</th><th>Admin Notes</th><th>Actions</th></tr></thead>
+              <tbody id="requests-table-body"><tr><td colspan="8" style="text-align:center;padding:24px;color:#94A3B8;">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── AUDIT LOG (admin only) ── -->
+      <div class="panel" id="panel-audit">
+        <div class="page-title">Audit Log</div>
+        <div class="page-desc">System activity and user actions</div>
+        <div class="card">
+          <div class="card-header">
+            <div><h4>Audit Trail</h4><p>All recorded system events</p></div>
+          </div>
+          <div class="card-body">
+            <table>
+              <thead>
+                <tr><th>Time</th><th>User</th><th>Action</th><th>Entity</th><th>Details</th></tr>
+              </thead>
+              <tbody id="audit-table-body">
+                <tr><td colspan="5" style="text-align:center;color:var(--slate);">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STOCK TRANSFERS (admin only) ── -->
+      <div class="panel" id="panel-transfers">
+        <div class="page-title">Stock Transfers</div>
+        <div class="page-desc">Transfer stock between facilities</div>
+        <div class="card">
+          <div class="card-header">
+            <div><h4>Transfer Records</h4><p>All inter-facility stock movements</p></div>
+            <div id="admin-add-transfer" style="display:none;">
+              <button class="btn btn-primary" onclick="openModal('stock_transfers')">＋ Add Transfer</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <table>
+              <thead>
+                <tr><th>Transfer ID</th><th>Vaccine</th><th>From Facility</th><th>To Facility</th><th>Quantity</th><th>Date</th><th>Notes</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="transfers-table-body">
+                <tr><td colspan="8" style="text-align:center;color:var(--slate);">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /app -->
 
-<!-- ═══════════════════ GENERIC CRUD MODAL ═══════════════════ -->
-<div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:var(--card,#142033);color:inherit;border-radius:14px;padding:24px;width:90%;max-width:420px;max-height:85vh;overflow-y:auto;">
-    <h3 id="modal-title" style="margin:0 0 16px;">Add Record</h3>
-    <form id="modal-form" onsubmit="submitModal(event)">
+<!-- ═══════════════════ PROFESSIONAL CRUD MODAL ═══════════════════ -->
+<div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:1000;align-items:center;justify-content:center;opacity:0;transition:opacity.2s ease;">
+  <div class="modal-card" style="background:var(--white);border-radius:16px;width:90%;max-width:460px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 25px 50px -12px rgba(0,0,0,.25);transform:scale(.95);transition:transform.2s ease;">
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <span id="modal-icon" class="modal-icon">💉</span>
+        <div>
+          <h3 id="modal-title" class="modal-title">Add Record</h3>
+          <p id="modal-subtitle" class="modal-subtitle">Create a new record</p>
+        </div>
+      </div>
+      <button type="button" class="modal-close" onclick="closeModal()" aria-label="Close">×</button>
+    </div>
+    <!-- Body -->
+    <form id="modal-form" onsubmit="submitModal(event)" class="modal-body">
       <div id="modal-fields"></div>
-      <div id="modal-error" style="display:none;color:#ef4444;font-size:13px;margin:8px 0;"></div>
-      <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
-        <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save</button>
+      <div id="modal-error" style="display:none;background:#FEF2F2;color:#DC2626;padding:12px;border-radius:8px;font-size:13px;margin-top:16px;border:1px solid #FECACA;"></div>
+      <!-- Footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Record</button>
       </div>
     </form>
   </div>
@@ -968,6 +1155,47 @@ function apiFetch(path, options = {}) {
   });
 }
 
+function loadExpiryChart(data) {
+  const render = (vaccines) => {
+    const container = document.getElementById('expiry-chart');
+    if (!container) return;
+
+    const today = new Date();
+    const maxDays = 365;
+
+    container.innerHTML = vaccines.map(v => {
+      const daysLeft = v.expiry_date
+        ? Math.max(0, Math.ceil((new Date(v.expiry_date) - today) / 86400000))
+        : maxDays;
+      const pct = Math.min(100, Math.round((daysLeft / maxDays) * 100));
+      let color, statusText;
+      if (daysLeft < 30) { color = '#EF4444'; statusText = '⚠️ Critical'; }
+      else if (daysLeft < 90) { color = '#F59E0B'; statusText = '🔶 Warning'; }
+      else { color = '#10B981'; statusText = '✅ Safe'; }
+
+      return `
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:12px 16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-weight:600;font-size:13px;color:#0A1628;">${esc(v.vaccine_name || 'Vaccine #' + v.vaccine_id)}</span>
+            <span style="font-size:12px;color:${color};font-weight:600;">${daysLeft}d — ${statusText}</span>
+          </div>
+          <div style="background:#E2E8F0;border-radius:99px;height:10px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;background:${color};border-radius:99px;transition:width .6s ease;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px;">
+            <span style="font-size:11px;color:#94A3B8;">Today</span>
+            <span style="font-size:11px;color:#94A3B8;">${v.expiry_date || 'No expiry'}</span>
+          </div>
+        </div>`;
+    }).join('');
+  };
+  if (data) { render(data); return; }
+  apiFetch('/vaccines').then(res => {
+    if (res?.success) render(res.data);
+  });
+}
+
+
 function checkSession() {
   return apiFetch('/me').then(res => {
     if (res && res.success) {
@@ -989,20 +1217,20 @@ function checkSession() {
   });
 }
 
+
 function doLogin() {
   const u = document.getElementById('username').value.trim();
   const p = document.getElementById('password').value;
-  const r = document.getElementById('role').value;
   const err = document.getElementById('login-error');
   err.style.display = 'none';
 
-  if (!u || !p || !r) {
-    err.textContent = '⚠ Please fill in username, password, and role.';
+  if (!u || !p) {
+    err.textContent = '⚙ Please fill in username and password.';
     err.style.display = 'block';
     return;
   }
 
-  apiFetch('/login', { method: 'POST', body: JSON.stringify({ username: u, password: p, role: r }) })
+  apiFetch('/login', { method: 'POST', body: JSON.stringify({ username: u, password: p }) })
     .then(res => {
       if (!res || !res.success) {
         err.textContent = '⚠ ' + (res?.message || 'Invalid credentials. Please check and try again.');
@@ -1034,7 +1262,7 @@ function doLogout() {
     document.getElementById('app').style.display = 'none';
     document.getElementById('username').value = '';
     document.getElementById('password').value = '';
-    document.getElementById('role').value = '';
+    
   });
 }
 
@@ -1049,21 +1277,27 @@ const NAV_ADMIN = [
     { id: 'facilities',    icon: '🏥', label: 'Facilities' },
     { id: 'distribution',  icon: '🚚', label: 'Distribution' },
     { id: 'stock',         icon: '📦', label: 'Stock' },
+    { id: 'transfers',     icon: '🔄', label: 'Transfers' },
+    { id: 'requests',     icon: '📋', label: 'Requests' },
   ]},
   { section: 'System', items: [
     { id: 'admin',         icon: '⚙️', label: 'Administration' },
+    { id: 'audit',         icon: '📝', label: 'Audit Log' },
   ]}
 ];
 
-const NAV_CLIENT = [
+const NAV_NURSE = [
   { section: 'Overview', items: [
     { id: 'overview',      icon: '📊', label: 'Dashboard' },
   ]},
-  { section: 'My Data', items: [
+  { section: 'My Facility', items: [
     { id: 'myfacility',   icon: '🏥', label: 'My Facility' },
     { id: 'vaccines',     icon: '💉', label: 'Vaccines' },
     { id: 'stock',        icon: '📦', label: 'Stock Levels' },
     { id: 'distribution', icon: '🚚', label: 'Distributions' },
+  ]},
+  { section: 'Support', items: [
+    { id: 'requests',     icon: '📋', label: 'Submit Request' },
   ]}
 ];
 
@@ -1076,24 +1310,27 @@ const PANEL_TITLES = {
   stock:        ['Stock Inventory', 'Current vaccine stock levels'],
   admin:        ['Administration', 'System settings and user management'],
   myfacility:   ['My Facility', 'Your facility stock and records'],
+  requests:     ['Vaccine Requests', 'Submit and track facility requests'],
+  audit:        ['Audit Log', 'System activity and user actions'],
+  transfers:    ['Stock Transfers', 'Transfer stock between facilities'],
 };
 
 function setupApp() {
   const { role, name, username } = currentUser;
 
   // Sidebar user info
-  document.getElementById('sb-role-badge').textContent = role === 'admin' ? '⬤ Admin' : '⬤ Client';
+  document.getElementById('sb-role-badge').textContent = role === 'admin' ? '⬤ Admin' : '⬤ Nurse';
   document.getElementById('sb-role-badge').style.background = role === 'admin' ? 'rgba(239,68,68,.15)' : 'rgba(0,180,166,.15)';
   document.getElementById('sb-role-badge').style.color = role === 'admin' ? '#dc2626' : 'var(--teal)';
   document.getElementById('sb-username').textContent = name;
 
   // Topbar
   document.getElementById('tb-user').textContent = name;
-  document.getElementById('tb-role').textContent = role === 'admin' ? 'Administrator' : 'Client User';
+  document.getElementById('tb-role').textContent = role === 'admin' ? 'Administrator' : 'Nurse';
   document.getElementById('tb-avatar').textContent = username[0].toUpperCase();
 
   // Build nav
-  const navCfg = role === 'admin' ? NAV_ADMIN : NAV_CLIENT;
+  const navCfg = role === 'admin' ? NAV_ADMIN : NAV_NURSE;
   const nav = document.getElementById('sb-nav');
   nav.innerHTML = '';
   navCfg.forEach(sec => {
@@ -1111,7 +1348,7 @@ function setupApp() {
   });
 
   // Admin-only buttons
-  const adminEls = ['admin-add-vaccine','admin-add-supplier','admin-add-facility','admin-add-dist','admin-add-stock','admin-add-user'];
+  const adminEls = ['admin-add-vaccine','admin-add-supplier','admin-add-facility','admin-add-dist','admin-add-stock','admin-add-user','admin-add-transfer'];
   adminEls.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = role === 'admin' ? 'block' : 'none';
@@ -1168,6 +1405,9 @@ function loadPanelData(panelId) {
   else if (panelId === 'stock') loadStock();
   else if (panelId === 'admin') loadUsers();
   else if (panelId === 'myfacility') loadMyFacility();
+  else if (panelId === 'requests') loadRequests();
+  else if (panelId === 'audit') loadAuditLogs();
+    else if (panelId === 'transfers') loadTransfers();
 }
 
 function loadDashboard() {
@@ -1181,15 +1421,8 @@ function loadDashboard() {
   });
 
   apiFetch('/vaccines').then(res => {
-    const tbody = document.getElementById('dash-vaccine-table-body');
-    if (!res?.success) { tbody.innerHTML = '<tr><td colspan="4">Failed to load.</td></tr>'; return; }
-    tbody.innerHTML = res.data.map(v => `
-      <tr>
-        <td><strong>${esc(v.vaccine_name)}</strong></td>
-        <td>${esc(v.supplier_name) || '—'}</td>
-        <td>${esc(v.expiry_date)}</td>
-        <td>${STATUS_BADGE[v.status] || ''}</td>
-      </tr>`).join('') || '<tr><td colspan="4">No vaccines.</td></tr>';
+    if (!res?.success) return;
+    loadExpiryChart(res.data);
   });
 }
 
@@ -1296,7 +1529,7 @@ function loadUsers() {
     tbody.innerHTML = res.data.map(u => `
       <tr>
         <td>${esc(u.username)}</td>
-        <td><span class="badge ${u.role === 'admin' ? 'badge-red' : 'badge-teal'}">${u.role === 'admin' ? 'Admin' : 'Client'}</span></td>
+        <td><span class="badge ${u.role === 'admin' ? 'badge-red' : 'badge-teal'}">${u.role === 'admin' ? 'Admin' : 'Nurse'}</span></td>
         <td>${esc(u.facility_name) || '—'}</td>
         <td>${rowActions('users', u.user_id, u)}</td>
       </tr>`).join('') || '<tr><td colspan="4">No users found.</td></tr>';
@@ -1325,74 +1558,244 @@ function loadMyFacility() {
   });
 }
 
+// ── VACCINE REQUEST SYSTEM ═══
+
+/** Show/hide conditional fields based on request type */
+document.addEventListener('change', function(e) {
+  if (e.target && e.target.id === 'req-type') {
+    const t = e.target.value;
+    document.getElementById('req-vaccine-field').style.display = (t === 'new_vaccine' || t === 'low_stock') ? 'block' : 'none';
+    document.getElementById('req-qty-field').style.display = (t === 'low_stock') ? 'block' : 'none';
+  }
+});
+
+function resetRequestForm() {
+  document.getElementById('req-type').value = '';
+  document.getElementById('req-vaccine-name').value = '';
+  document.getElementById('req-quantity').value = '';
+  document.getElementById('req-notes').value = '';
+  document.getElementById('req-vaccine-field').style.display = 'none';
+  document.getElementById('req-qty-field').style.display = 'none';
+  document.getElementById('req-error').style.display = 'none';
+}
+
+function loadAuditLogs() {
+  if (currentUser.role !== 'admin') {
+    document.getElementById('audit-table-body').innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--slate);padding:24px;">Access denied — admin only.</td></tr>';
+    return;
+  }
+  apiFetch('/audit-logs').then(res => {
+    const tbody = document.getElementById('audit-table-body');
+    if (!res?.success) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;">Failed to load.</td></tr>'; return; }
+    const entityIcons = { vaccines:'💉', suppliers:'🏭', facilities:'🏥', distribution:'🚚', stock:'📦', users:'👤', stock_transfers:'🔄' };
+    const actionColors = { create:'background:#D1FAE5;color:#065F46;', update:'background:#FEF3C7;color:#92400E;', delete:'background:#FEE2E2;color:#991B1B;' };
+    tbody.innerHTML = res.data.map(l => {
+      const icon = entityIcons[l.entity] || '📄';
+      const badge = actionColors[l.action] || '';
+      return `<tr>
+        <td style="white-space:nowrap;font-size:12px;">${esc(l.created_at)}</td>
+        <td>${esc(l.username)}</td>
+        <td><span style="${badge}padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:capitalize;">${l.action}</span></td>
+        <td>${icon} ${esc(l.entity)}</td>
+        <td style="font-size:12px;max-width:250px;white-space:normal;">${esc(l.details) || '—'}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="5" style="text-align:center;color:#94A3B8;">No audit logs yet.</td></tr>';
+  });
+}
+
+function loadTransfers() {
+  apiFetch('/stock-transfers').then(res => {
+    const tbody = document.getElementById('transfers-table-body');
+    if (!res?.success) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#94A3B8;">Failed to load.</td></tr>'; return; }
+    tbody.innerHTML = res.data.map(t => `<tr>
+      <td><span class="badge badge-teal">#${String(t.transfer_id).padStart(3,'0')}</span></td>
+      <td>${esc(t.vaccine_name) || '—'}</td>
+      <td>${esc(t.from_facility_name) || '—'}</td>
+      <td>${esc(t.to_facility_name) || '—'}</td>
+      <td><strong>${t.quantity}</strong> doses</td>
+      <td style="white-space:nowrap;font-size:12px;">${esc(t.transfer_date)}</td>
+      <td style="font-size:12px;max-width:150px;white-space:normal;">${esc(t.notes) || '—'}</td>
+      <td>${rowActions('stock_transfers', t.transfer_id, t)}</td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:#94A3B8;">No transfers yet.</td></tr>';
+  });
+}
+
+function submitRequest(e) {
+  e.preventDefault();
+  const err = document.getElementById('req-error');
+  err.style.display = 'none';
+
+  const type = document.getElementById('req-type').value;
+  const vaccineName = document.getElementById('req-vaccine-name').value.trim();
+  const quantity = document.getElementById('req-quantity').value.trim();
+  const notes = document.getElementById('req-notes').value.trim();
+
+  if (!type) { err.textContent = 'Please select a request type.'; err.style.display='block'; return; }
+  if ((type === 'new_vaccine' || type === 'low_stock') && !vaccineName) { err.textContent = 'Please enter the vaccine name.'; err.style.display='block'; return; }
+
+  const body = { request_type: type, notes };
+  if (vaccineName) body.vaccine_name = vaccineName;
+  if (quantity) body.quantity_needed = parseInt(quantity);
+
+  apiFetch('/vaccine-requests', { method: 'POST', body: JSON.stringify(body) }).then(res => {
+    if (!res?.success) { err.textContent = res?.message || 'Failed to submit.'; err.style.display='block'; return; }
+    alert('Request submitted!');
+    resetRequestForm();
+    loadedPanels.delete('requests');
+    loadRequests();
+  }).catch(() => { err.textContent = 'Could not reach server.'; err.style.display='block'; });
+}
+
+function loadRequests() {
+  apiFetch('/vaccine-requests').then(res => {
+    const tbody = document.getElementById('requests-table-body');
+    if (!res?.success) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:#94A3B8;">Failed to load.</td></tr>'; return; }
+
+    const isAdmin = currentUser.role === 'admin';
+    document.getElementById('requests-count').textContent = res.data.length + ' requests';
+
+    const formCard = document.getElementById('requests-nurse-form');
+    if (formCard) formCard.style.display = isAdmin ? 'none' : 'block';
+
+    document.getElementById('requests-desc').textContent = isAdmin
+      ? 'Manage all facility requests. Approve or reject as needed.'
+      : 'Submit and track requests for your facility.';
+
+    tbody.innerHTML = res.data.map(r => {
+      const badge = r.status === 'approved' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-amber';
+      const label = r.status === 'approved' ? '✓ Approved' : r.status === 'rejected' ? '✕ Rejected' : '⏳ Pending';
+      const typeIcon = r.request_type === 'new_vaccine' ? '🆕 New' : r.request_type === 'low_stock' ? '⚠️ Stock' : '📝 Other';
+      const adminActions = isAdmin && r.status === 'pending'
+        ? `<span style="display:flex;gap:4px;">
+            <button style="background:#D1FAE5;color:#065F46;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:500;" onclick="approveRequest(${r.request_id})">✓ Approve</button>
+            <button style="background:#FEE2E2;color:#991B1B;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:500;" onclick="rejectRequest(${r.request_id})">✕ Reject</button>
+           </span>`
+        : '<span style="color:#94A3B8;font-size:11px;">—</span>';
+
+      return `<tr>
+        <td>#${r.request_id}</td>
+        <td style="font-size:12px;">${esc(r.created_at)}</td>
+        <td><span class="badge badge-teal">${typeIcon}</span></td>
+        <td><strong>${esc(r.vaccine_name) || '—'}</strong></td>
+        <td>${r.quantity_needed ? r.quantity_needed + ' doses' : '—'}</td>
+        <td><span class="badge ${badge}">${label}</span></td>
+        <td style="font-size:12px;max-width:200px;white-space:normal;">${esc(r.admin_notes) || '—'}</td>
+        <td>${adminActions}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="8" style="text-align:center;padding:24px;color:#94A3B8;">No requests yet.</td></tr>';
+  });
+}
+
+function approveRequest(id) {
+  const notes = prompt('Admin notes (optional):');
+  apiFetch('/vaccine-requests/' + id, { method: 'PUT', body: JSON.stringify({ status: 'approved', admin_notes: notes || '' }) }).then(res => {
+    if (!res?.success) { alert(res?.message || 'Failed.'); return; }
+    alert('Request approved!');
+    loadedPanels.delete('requests');
+    loadRequests();
+  });
+}
+
+function rejectRequest(id) {
+  const notes = prompt('Reason for rejection:');
+  if (!notes) { alert('Please provide a reason.'); return; }
+  apiFetch('/vaccine-requests/' + id, { method: 'PUT', body: JSON.stringify({ status: 'rejected', admin_notes: notes }) }).then(res => {
+    if (!res?.success) { alert(res?.message || 'Failed.'); return; }
+    alert('Request rejected.');
+    loadedPanels.delete('requests');
+    loadRequests();
+  });
+}
+
 // ── Generic CRUD: Add / Edit / Delete (admin only) ──
 
 const ENTITY = {
   vaccines: {
     label: 'Vaccine',
+    icon: '💉',
     idField: 'vaccine_id',
     panel: 'vaccines',
     fields: [
-      { name: 'vaccine_id',   label: 'Vaccine ID', type: 'number', lockOnEdit: true, required: true },
-      { name: 'vaccine_name', label: 'Vaccine Name', type: 'text', required: true },
-      { name: 'supplier_id',  label: 'Supplier ID', type: 'number', required: false },
-      { name: 'expiry_date',  label: 'Expiry Date', type: 'date', required: true },
+      { name: 'vaccine_id',   label: 'Vaccine ID', type: 'number', lockOnEdit: true, required: true, placeholder: 'e.g. 6' },
+      { name: 'vaccine_name', label: 'Vaccine Name', type: 'text', required: true, placeholder: 'e.g. Cholera, Hepatitis B' },
+      { name: 'supplier_id',  label: 'Supplier', type: 'select', options: 'suppliers', optionLabel: 'supplier_name', optionValue: 'supplier_id', required: false },
+      { name: 'expiry_date',  label: 'Expiry Date', type: 'date', required: true, placeholder: 'e.g. 2027-12-31' },
     ],
   },
   suppliers: {
     label: 'Supplier',
+    icon: '🏭',
     idField: 'supplier_id',
     panel: 'suppliers',
     fields: [
-      { name: 'supplier_id',   label: 'Supplier ID', type: 'number', lockOnEdit: true, required: true },
-      { name: 'supplier_name', label: 'Supplier Name', type: 'text', required: true },
-      { name: 'contact',       label: 'Contact', type: 'text', required: false },
+      { name: 'supplier_id',   label: 'Supplier ID', type: 'number', lockOnEdit: true, required: true, placeholder: 'e.g. 1' },
+      { name: 'supplier_name', label: 'Supplier Name', type: 'text', required: true, placeholder: 'e.g. Pfizer, Moderna' },
+      { name: 'contact',       label: 'Contact', type: 'text', required: false, placeholder: 'e.g. supply@pfizer.com' },
     ],
   },
   facilities: {
     label: 'Facility',
+    icon: '🏥',
     idField: 'facility_id',
     panel: 'facilities',
     fields: [
-      { name: 'facility_id',   label: 'Facility ID', type: 'number', lockOnEdit: true, required: true },
-      { name: 'facility_name', label: 'Facility Name', type: 'text', required: true },
-      { name: 'location_',     label: 'Location', type: 'text', required: false },
+      { name: 'facility_id',   label: 'Facility ID', type: 'number', lockOnEdit: true, required: true, placeholder: 'e.g. 1' },
+      { name: 'facility_name', label: 'Facility Name', type: 'text', required: true, placeholder: 'e.g. Community Health Center' },
+      { name: 'location_',     label: 'Location', type: 'text', required: false, placeholder: 'e.g. Jakarta, Indonesia' },
     ],
   },
   distribution: {
     label: 'Distribution',
+    icon: '🚚',
     idField: 'distribution_id',
     panel: 'distribution',
     fields: [
-      { name: 'distribution_id',   label: 'Distribution ID', type: 'number', lockOnEdit: true, required: true },
-      { name: 'vaccine_id',        label: 'Vaccine ID', type: 'number', required: true },
-      { name: 'facility_id',       label: 'Facility ID', type: 'number', required: true },
-      { name: 'quantity',          label: 'Quantity', type: 'number', required: true },
-      { name: 'distribution_date', label: 'Distribution Date', type: 'date', required: false },
+      { name: 'distribution_id',   label: 'Distribution ID', type: 'number', lockOnEdit: true, required: true, placeholder: 'e.g. 1' },
+      { name: 'vaccine_id',        label: 'Vaccine', type: 'select', options: 'vaccines', optionLabel: 'vaccine_name', optionValue: 'vaccine_id', required: true },
+      { name: 'facility_id',       label: 'Facility', type: 'select', options: 'facilities', optionLabel: 'facility_name', optionValue: 'facility_id', required: true },
+      { name: 'quantity',          label: 'Quantity', type: 'number', required: true, placeholder: 'e.g. 500' },
+      { name: 'distribution_date', label: 'Distribution Date', type: 'date', required: false, placeholder: 'e.g. 2025-07-28' },
     ],
   },
   stock: {
     label: 'Stock',
+    icon: '📦',
     idField: 'stock_id',
     panel: 'stock',
     fields: [
-      { name: 'stock_id',    label: 'Stock ID', type: 'number', lockOnEdit: true, required: true },
-      { name: 'facility_id', label: 'Facility ID', type: 'number', lockOnEdit: true, required: true },
-      { name: 'vaccine_id',  label: 'Vaccine ID', type: 'number', lockOnEdit: true, required: true },
-      { name: 'quantity',    label: 'Quantity', type: 'number', required: true },
+      { name: 'stock_id',    label: 'Stock ID', type: 'number', lockOnEdit: true, required: true, placeholder: 'e.g. 1' },
+      { name: 'facility_id', label: 'Facility', type: 'select', options: 'facilities', optionLabel: 'facility_name', optionValue: 'facility_id', required: true },
+      { name: 'vaccine_id',  label: 'Vaccine', type: 'select', options: 'vaccines', optionLabel: 'vaccine_name', optionValue: 'vaccine_id', required: true },
+      { name: 'quantity',    label: 'Quantity', type: 'number', required: true, placeholder: 'e.g. 1000' },
     ],
   },
   users: {
     label: 'User',
+    icon: '👤',
     idField: 'user_id',
     panel: 'admin',
     fields: [
-      { name: 'user_id',     label: 'User ID', type: 'number', lockOnEdit: true, required: true },
-      { name: 'username',    label: 'Username', type: 'text', lockOnEdit: true, required: true },
-      { name: 'password',    label: 'Password', type: 'text', required: false, hint: 'Leave blank to keep unchanged when editing.' },
-      { name: 'role',        label: 'Role', type: 'select', options: ['admin', 'client'], lockOnEdit: true, required: true },
-      { name: 'full_name',   label: 'Full Name', type: 'text', required: false },
-      { name: 'facility_id', label: 'Facility ID (clients only)', type: 'number', required: false },
+      { name: 'user_id',     label: 'User ID', type: 'number', lockOnEdit: true, required: true, placeholder: 'e.g. 1' },
+      { name: 'username',    label: 'Username', type: 'text', lockOnEdit: true, required: true, placeholder: 'e.g. nurse_jaya' },
+      { name: 'password',    label: 'Password', type: 'text', required: false, placeholder: '' },
+      { name: 'role',        label: 'Role', type: 'select', options: ['admin', 'nurse'], lockOnEdit: true, required: true, placeholder: 'Select role' },
+      { name: 'full_name',   label: 'Full Name', type: 'text', required: false, placeholder: 'e.g. Jaya Wijaya' },
+      { name: 'facility_id', label: 'Facility', type: 'select', options: 'facilities', optionLabel: 'facility_name', optionValue: 'facility_id', required: false },
+    ],
+  },
+  stock_transfers: {
+    label: 'Stock Transfer',
+    icon: '🔄',
+    idField: 'transfer_id',
+    panel: 'transfers',
+    fields: [
+      { name: 'transfer_id',   label: 'Transfer ID', type: 'number', lockOnEdit: true, required: true, placeholder: 'e.g. 1' },
+      { name: 'vaccine_id',    label: 'Vaccine', type: 'select', options: 'vaccines', optionLabel: 'vaccine_name', optionValue: 'vaccine_id', required: true },
+      { name: 'from_facility_id', label: 'From Facility', type: 'select', options: 'facilities', optionLabel: 'facility_name', optionValue: 'facility_id', required: true },
+      { name: 'to_facility_id',   label: 'To Facility',   type: 'select', options: 'facilities', optionLabel: 'facility_name', optionValue: 'facility_id', required: true },
+      { name: 'quantity',      label: 'Quantity', type: 'number', required: true, placeholder: 'e.g. 200' },
+      { name: 'transfer_date', label: 'Transfer Date', type: 'date', required: false, placeholder: 'e.g. 2025-07-28' },
+      { name: 'notes',         label: 'Notes', type: 'text', required: false, placeholder: 'e.g. Emergency shipment' },
     ],
   },
 };
@@ -1408,41 +1811,93 @@ function rowActions(entityKey, id, rowData) {
     </div>`;
 }
 
-function openModal(entityKey, existing = null) {
+async function openModal(entityKey, existing = null) {
   const cfg = ENTITY[entityKey];
   modalState = { entityKey, mode: existing ? 'edit' : 'create', id: existing ? existing[cfg.idField] : null };
 
+  // Update title and subtitle
   document.getElementById('modal-title').textContent = (existing ? 'Edit ' : 'Add ') + cfg.label;
+  document.getElementById('modal-subtitle').textContent = existing
+    ? `Updating ${cfg.label} #${existing[cfg.idField]}`
+    : `Create a new ${cfg.label.toLowerCase()}`;
+  document.getElementById('modal-icon').textContent = cfg.icon || '📝';
   document.getElementById('modal-error').style.display = 'none';
+
+  // Show modal with loading state
+  document.getElementById('modal-fields').innerHTML = '<p style="color:#94A3B8;font-size:13px;padding:20px;">Loading options…</p>';
+  const overlay = document.getElementById('modal-overlay');
+  const card = overlay.querySelector('.modal-card');
+  overlay.style.display = 'flex';
+  setTimeout(() => { overlay.style.opacity = '1'; card.style.transform = 'scale(1)'; }, 10);
+
+  // Fetch options for dynamic dropdowns in parallel
+  const dynamicOptions = {};
+  const fetchPromises = [];
+  for (const f of cfg.fields) {
+    if (f.type === 'select' && typeof f.options === 'string') {
+      fetchPromises.push(
+        apiFetch(`/${f.options}`)
+          .then(res => { if (res?.success && res?.data) dynamicOptions[f.name] = res.data; })
+          .catch(e => { console.error(`Failed to load ${f.options}:`, e); dynamicOptions[f.name] = []; })
+      );
+    }
+  }
+  await Promise.all(fetchPromises);
 
   const fieldsHtml = cfg.fields.map(f => {
     const val = existing ? (existing[f.name] ?? '') : '';
     const disabled = (existing && f.lockOnEdit) ? 'disabled' : '';
     const req = f.required ? 'required' : '';
+    const reqStar = f.required ? '<span class="req">*</span>' : '';
+    
+    // Hide only the primary ID field on create (it auto-increments), not foreign key dropdowns
+    const hidden = !existing && f.name === cfg.idField ? 'display:none;' : '';
+    
     let input;
     if (f.type === 'select') {
-      input = `<select name="${f.name}" ${disabled} ${req} style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:inherit;">
+      let options;
+      if (Array.isArray(f.options)) {
+        // Static options (like role: ['admin', 'nurse'])
+        options = f.options.map(o => 
+          `<option value="${o}" ${val === o ? 'selected' : ''}>${o.charAt(0).toUpperCase() + o.slice(1)}</option>`
+        ).join('');
+      } else {
+        // Dynamic options from API (like vaccines, facilities, suppliers)
+        const data = dynamicOptions[f.name] || [];
+        options = data.map(item => 
+          `<option value="${item[f.optionValue]}" ${val == item[f.optionValue] ? 'selected' : ''}>${item[f.optionLabel]}</option>`
+        ).join('');
+      }
+      input = `<select name="${f.name}" ${disabled} ${req} class="modal-input">
         <option value="">Select…</option>
-        ${f.options.map(o => `<option value="${o}" ${val === o ? 'selected' : ''}>${o}</option>`).join('')}
+        ${options}
       </select>`;
     } else {
       input = `<input type="${f.type}" name="${f.name}" value="${esc(val)}" ${disabled} ${req}
-        style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:inherit;" />`;
+        placeholder="${f.placeholder || ''}" class="modal-input" />`;
     }
     return `
-      <div class="field" style="margin-bottom:12px;">
-        <label style="display:block;font-size:12px;margin-bottom:4px;">${f.label}</label>
+      <div class="modal-field" style="${hidden}">
+        <label class="modal-label">${f.label} ${reqStar}</label>
         ${input}
-        ${f.hint ? `<div style="font-size:11px;color:var(--slate);margin-top:4px;">${f.hint}</div>` : ''}
       </div>`;
   }).join('');
 
   document.getElementById('modal-fields').innerHTML = fieldsHtml;
-  document.getElementById('modal-overlay').style.display = 'flex';
+
+  // Auto-focus first input
+  setTimeout(() => {
+    const firstInput = document.querySelector('#modal-fields .modal-input:not([disabled])');
+    if (firstInput) firstInput.focus();
+  }, 100);
 }
 
 function closeModal() {
-  document.getElementById('modal-overlay').style.display = 'none';
+  const overlay = document.getElementById('modal-overlay');
+  const card = overlay.querySelector('.modal-card');
+  overlay.style.opacity = '0';
+  card.style.transform = 'scale(.95)';
+  setTimeout(() => { overlay.style.display = 'none'; }, 200);
 }
 
 function submitModal(e) {
@@ -1499,6 +1954,32 @@ function refreshPanel(panelId) {
 }
 
 
+
+// ── Expiry Chart ──
+let expiryChartInstance = null;
+
+// ── Audit Logs ──
+const ENTITY_ICONS = {
+  vaccine: '💉 Vaccine',
+  supplier: '🏭 Supplier',
+  facility: '🏥 Facility',
+  distribution: '🚚 Distribution',
+  stock: '📦 Stock',
+  user: '👤 User',
+  stock_transfer: '🔄 Stock Transfer',
+  stock_transfers: '🔄 Stock Transfer',
+  vaccine_request: '📋 Request',
+  vaccine_requests: '📋 Request',
+};
+
+const ACTION_COLORS = {
+  create: 'badge-green',
+  insert: 'badge-green',
+  update: 'badge-amber',
+  delete: 'badge-red',
+};
+
+// ── Stock Transfers ──
 // ── Mobile sidebar ──
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');

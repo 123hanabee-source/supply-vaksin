@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Distribution;
 use Illuminate\Http\Request;
 
@@ -16,7 +17,7 @@ class DistributionController extends BaseController
     public function index()
     {
         $query = Distribution::with(['vaccine', 'facility']);
-        if ($this->isClient() && $this->sessionFacilityId()) {
+        if ($this->isNurse() && $this->sessionFacilityId()) {
             $query->where('facility_id', $this->sessionFacilityId());
         }
         $rows = $query->orderByDesc('distribution_date')->get()->map(fn ($d) => [
@@ -36,7 +37,7 @@ class DistributionController extends BaseController
         $row = Distribution::with(['vaccine', 'facility'])->find($id);
         if (!$row) return $this->fail('Distribution record not found.', 404);
 
-        if ($this->isClient() && (int) $row->facility_id !== (int) $this->sessionFacilityId()) {
+        if ($this->isNurse() && (int) $row->facility_id !== (int) $this->sessionFacilityId()) {
             return $this->fail('You can only view distributions sent to your facility.', 403);
         }
         return $this->ok($row);
@@ -92,8 +93,8 @@ class DistributionController extends BaseController
      */
     public function requestRestock(Request $request)
     {
-        if (!$this->isClient()) {
-            return $this->fail('Only clients can submit restock requests.', 403);
+        if (!$this->isNurse()) {
+            return $this->fail('Only nurses can submit restock requests.', 403);
         }
         if ($err = $this->requireFields($request, ['distribution_id', 'vaccine_id', 'quantity'])) return $err;
 

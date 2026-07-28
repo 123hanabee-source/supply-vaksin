@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Facility;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
@@ -19,7 +20,7 @@ class FacilityController extends BaseController
 
     public function show($id)
     {
-        if ($this->isClient() && (int) $this->sessionFacilityId() !== (int) $id) {
+        if ($this->isNurse() && (int) $this->sessionFacilityId() !== (int) $id) {
             return $this->fail("You can only view your own facility.", 403);
         }
 
@@ -69,7 +70,8 @@ class FacilityController extends BaseController
 
         try {
             $facility->delete();
-            return $this->ok(null, 'Facility deleted.');
+            AuditLog::log('delete', 'facilities', $id, "Deleted facility #{$id}");
+        return $this->ok(null, 'Facility deleted.');
         } catch (QueryException $e) {
             return $this->fail('Cannot delete: facility has linked distribution, stock, or user records.', 409);
         }

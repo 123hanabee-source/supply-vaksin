@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Modal Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .pass { background: #d4edda; border-color: #c3e6cb; }
+        .fail { background: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Modal Functionality Test</h1>
+    <div id="results"></div>
+
+    <script>
+        const results = [];
+
+        function test(name, condition) {
+            const passed = Boolean(condition);
+            results.push({ name, passed });
+            const div = document.createElement('div');
+            div.className = `test-section ${passed ? 'pass' : 'fail'}`;
+            div.innerHTML = `<strong>${passed ? '✓' : '✗'} ${name}</strong>`;
+            document.getElementById('results').appendChild(div);
+        }
+
+        // Test 1: ENTITY config exists
+        test('ENTITY config exists', typeof ENTITY !== 'undefined');
+        
+        // Test 2: All entities defined
+        const entities = ['vaccines', 'suppliers', 'facilities', 'distribution', 'stock', 'users'];
+        entities.forEach(entity => {
+            test(`Entity '${entity}' defined`, ENTITY && ENTITY[entity]);
+        });
+
+        // Test 3: Dynamic dropdown configuration
+        test('Vaccines has supplier dropdown', 
+             ENTITY.vaccines.fields.find(f => f.name === 'supplier_id' && f.type === 'select'));
+        
+        test('Distribution has vaccine dropdown', 
+             ENTITY.distribution.fields.find(f => f.name === 'vaccine_id' && f.type === 'select'));
+        
+        test('Distribution has facility dropdown', 
+             ENTITY.distribution.fields.find(f => f.name === 'facility_id' && f.type === 'select'));
+
+        test('Stock has vaccine dropdown', 
+             ENTITY.stock.fields.find(f => f.name === 'vaccine_id' && f.type === 'select'));
+        
+        test('Stock has facility dropdown', 
+             ENTITY.stock.fields.find(f => f.name === 'facility_id' && f.type === 'select'));
+
+        // Test 4: openModal function
+        test('openModal function exists', typeof openModal === 'function');
+        test('openModal is async', openModal.toString().includes('async'));
+
+        // Test 5: closeModal function  
+        test('closeModal function exists', typeof closeModal === 'function');
+
+        // Test 6: submitModal function
+        test('submitModal function exists', typeof submitModal === 'function');
+
+        // Test 7: rowActions function
+        test('rowActions function exists', typeof rowActions === 'function');
+
+        // Test 8: Modal elements exist
+        const modalElements = ['modal-overlay', 'modal-title', 'modal-subtitle', 'modal-fields'];
+        modalElements.forEach(id => {
+            test(`Modal element '${id}' exists`, document.getElementById(id) !== null);
+        });
+
+        // Test 9: Check for dynamic loading code
+        test('Dynamic options loading code exists', 
+             openModal.toString().includes('fetchPromises') && 
+             openModal.toString().includes('Promise.all'));
+
+        // Test 10: Check ID hiding on create
+        test('ID field hiding on create exists', 
+             openModal.toString().includes('!existing') && 
+             openModal.toString().includes("f.name.includes('_id')"));
+
+        // Summary
+        const totalTests = results.length;
+        const passedTests = results.filter(r => r.passed).length;
+        const summaryDiv = document.createElement('div');
+        summaryDiv.style.marginTop = '20px';
+        summaryDiv.style.padding = '15px';
+        summaryDiv.style.background = passedTests === totalTests ? '#d4edda' : '#fff3cd';
+        summaryDiv.innerHTML = `
+            <strong>Summary: ${passedTests}/${totalTests} tests passed</strong>
+            ${passedTests === totalTests ? '<p>✓ All tests passed! The modal system should work correctly.</p>' : '<p>⚠️ Some tests failed. Check the results above.</p>'}
+        `;
+        document.getElementById('results').appendChild(summaryDiv);
+
+        // Test actual modal opening (manual)
+        const testButton = document.createElement('button');
+        testButton.textContent = 'Test Open Modal (Vaccines - Add)';
+        testButton.onclick = () => {
+            try {
+                openModal('vaccines');
+                setTimeout(() => {
+                    const modalContent = document.getElementById('modal-fields').innerHTML;
+                    if (modalContent.includes('Loading options') || modalContent.includes('Vaccine ID')) {
+                        alert('✓ Modal opened successfully! Check if you see "Loading options..." initially.');
+                    } else {
+                        alert('✗ Modal opened but content unexpected');
+                    }
+                }, 100);
+            } catch (e) {
+                alert('✗ Error opening modal: ' + e.message);
+            }
+        };
+        document.body.appendChild(testButton);
+    </script>
+</body>
+</html>

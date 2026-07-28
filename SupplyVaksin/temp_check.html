@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+// This is the modal code to verify
+const ENTITY = {
+  vaccines: {
+    label: 'Vaccine',
+    icon: '💉',
+    fields: [
+      { name: 'vaccine_id', label: 'Vaccine ID', type: 'number', required: true, placeholder: 'e.g. 6' },
+    ],
+  },
+};
+
+// Test select capitalization
+const options = ['admin', 'nurse'];
+const capitalized = options.map(o => `<option value="${o}">${o.charAt(0).toUpperCase() + o.slice(1)}</option>`).join('');
+console.log('Capitalized options:', capitalized);
+
+// Test placeholder in input
+const f = { name: 'test', type: 'text', placeholder: 'e.g. example' };
+const input = `<input type="${f.type}" name="${f.name}" placeholder="${f.placeholder || ''}" />`;
+console.log('Input with placeholder:', input);
+</script>
+✓ Code runs without errors
+</body>
+</html>

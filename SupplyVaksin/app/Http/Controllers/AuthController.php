@@ -10,26 +10,23 @@ use Illuminate\Http\Request;
  */
 class AuthController extends BaseController
 {
-    /** POST /api/login — Body: { "username": "...", "password": "...", "role": "admin|client" } */
+    /** POST /api/login — Body: { "username": "...", "password": "..." }
+     *  Role is auto-detected from the database. */
     public function login(Request $request)
     {
         $username = trim((string) $request->input('username'));
         $password = trim((string) $request->input('password'));
-        $role     = trim((string) $request->input('role'));
 
-        if (!$username || !$password || !$role) {
-            return $this->fail('Username, password, and role are all required.', 400);
+        if (!$username || !$password) {
+            return $this->fail('Username and password are required.', 400);
         }
 
         $user = User::with('facility')
             ->where('username', $username)
-            ->where('role', $role)
             ->first();
 
-        // NOTE: plaintext comparison to match the demo schema.
-        // Swap for Hash::check($password, $user->password) once passwords are hashed.
         if (!$user || $password !== $user->password) {
-            return $this->fail('Invalid username, password, or role.', 401);
+            return $this->fail('Invalid username or password.', 401);
         }
 
         $request->session()->regenerate();
@@ -48,6 +45,10 @@ class AuthController extends BaseController
             'facility_id'   => $user->facility_id,
             'facility_name' => $user->facility?->facility_name,
             'location'      => $user->facility?->location_,
+            'email'         => $user->email,
+            'sex'           => $user->sex,
+            'date_of_birth' => $user->date_of_birth?->toDateString(),
+            'assigned_date' => $user->assigned_date?->toDateString(),
         ]);
     }
 
@@ -79,6 +80,10 @@ class AuthController extends BaseController
             'facility_id'   => $user->facility_id,
             'facility_name' => $user->facility?->facility_name,
             'location'      => $user->facility?->location_,
+            'email'         => $user->email,
+            'sex'           => $user->sex,
+            'date_of_birth' => $user->date_of_birth?->toDateString(),
+            'assigned_date' => $user->assigned_date?->toDateString(),
         ]);
     }
 }

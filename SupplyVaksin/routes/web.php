@@ -3,5 +3,9 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return response()->file(public_path('vaccine.html'));
+});
+
+Route::get('/vaccine.html', function () {
+    return response()->file(public_path('vaccine.html'));
 });

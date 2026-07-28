@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Stock;
 use Illuminate\Http\Request;
 
@@ -15,7 +16,7 @@ class StockController extends BaseController
     public function index()
     {
         $query = Stock::with(['facility', 'vaccine']);
-        if ($this->isClient() && $this->sessionFacilityId()) {
+        if ($this->isNurse() && $this->sessionFacilityId()) {
             $query->where('facility_id', $this->sessionFacilityId());
         }
         $rows = $query->orderBy('stock_id')->get()->map(fn ($s) => [
@@ -35,7 +36,7 @@ class StockController extends BaseController
         $stock = Stock::with(['facility', 'vaccine'])->find($id);
         if (!$stock) return $this->fail('Stock record not found.', 404);
 
-        if ($this->isClient() && (int) $stock->facility_id !== (int) $this->sessionFacilityId()) {
+        if ($this->isNurse() && (int) $stock->facility_id !== (int) $this->sessionFacilityId()) {
             return $this->fail("You can only view your own facility's stock.", 403);
         }
         return $this->ok($stock);
@@ -66,7 +67,8 @@ class StockController extends BaseController
         if (!$stock) return $this->fail('Stock record not found.', 404);
 
         $stock->update(['quantity' => $request->input('quantity')]);
-        return $this->ok(null, 'Stock updated.');
+        AuditLog::log('create', 'stock', $s['stock_id'], 'Created stock #' . $s['stock_id']);
+                    return $this->ok($s, 'Stock created.', 201);
     }
 
     public function destroy($id)

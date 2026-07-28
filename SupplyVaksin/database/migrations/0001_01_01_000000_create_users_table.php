@@ -23,7 +23,7 @@ return new class extends Migration
             $table->integer('facility_id')->nullable();
         });
 
-        DB::statement("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('admin', 'client'))");
+        DB::statement("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('admin', 'nurse'))");
 
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();

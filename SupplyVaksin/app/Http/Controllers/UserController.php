@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -22,6 +23,10 @@ class UserController extends BaseController
             'username'      => $u->username,
             'role'          => $u->role,
             'full_name'     => $u->full_name,
+            'email'         => $u->email,
+            'sex'           => $u->sex,
+            'date_of_birth' => $u->date_of_birth?->toDateString(),
+            'assigned_date' => $u->assigned_date?->toDateString(),
             'facility_id'   => $u->facility_id,
             'facility_name' => $u->facility?->facility_name,
         ]);
@@ -30,7 +35,7 @@ class UserController extends BaseController
 
     public function show($id)
     {
-        if ($this->isClient() && (int) session('user_id') !== (int) $id) {
+        if ($this->isNurse() && (int) session('user_id') !== (int) $id) {
             return $this->fail('You can only view your own account.', 403);
         }
 
@@ -42,6 +47,10 @@ class UserController extends BaseController
             'username'      => $u->username,
             'role'          => $u->role,
             'full_name'     => $u->full_name,
+            'email'         => $u->email,
+            'sex'           => $u->sex,
+            'date_of_birth' => $u->date_of_birth?->toDateString(),
+            'assigned_date' => $u->assigned_date?->toDateString(),
             'facility_id'   => $u->facility_id,
             'facility_name' => $u->facility?->facility_name,
         ]);
@@ -54,8 +63,8 @@ class UserController extends BaseController
         if ($err = $this->requireFields($request, ['user_id', 'username', 'password', 'role'])) return $err;
 
         $role = $request->input('role');
-        if (!in_array($role, ['admin', 'client'])) {
-            return $this->fail("Role must be 'admin' or 'client'.", 400);
+        if (!in_array($role, ['admin', 'nurse'])) {
+            return $this->fail("Role must be 'admin' or 'nurse'.", 400);
         }
 
         User::create([
@@ -65,7 +74,7 @@ class UserController extends BaseController
             'password'    => $request->input('password'),
             'role'        => $role,
             'full_name'   => $request->input('full_name', ''),
-            'facility_id' => $role === 'client' ? $request->input('facility_id') : null,
+            'facility_id' => $role === 'nurse' ? $request->input('facility_id') : null,
         ]);
         return $this->ok(null, 'User created.');
     }
@@ -120,6 +129,7 @@ class UserController extends BaseController
         if (!$user) return $this->fail('User not found.', 404);
 
         $user->delete();
+        AuditLog::log('delete', 'users', $id, "Deleted user #{$id}");
         return $this->ok(null, 'User deleted.');
     }
 }
